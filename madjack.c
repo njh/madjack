@@ -49,7 +49,7 @@ int autoconnect = 0;
 
 
 // Callback called by JACK when audio is available
-static int proces_jack(jack_nframes_t nframes, void *arg)
+static int callback_jack(jack_nframes_t nframes, void *arg)
 {
 	jack_default_audio_sample_t *in;
 	unsigned int i;
@@ -68,6 +68,106 @@ static int proces_jack(jack_nframes_t nframes, void *arg)
 	return 0;
 }
 
+
+/*
+ * This is a private message structure. A generic pointer to this structure
+ * is passed to each of the callback functions. Put here any data you need
+ * to access from within the callbacks.
+ */
+
+struct buffer {
+  unsigned char const *start;
+  unsigned long length;
+};
+
+
+/*
+ * This is the MAD input callback. The purpose of this callback is to (re)fill
+ * the stream buffer which is to be decoded. In this example, an entire file
+ * has been mapped into memory, so we just call mad_stream_buffer() with the
+ * address and length of the mapping. When this callback is called a second
+ * time, we are finished decoding.
+ */
+
+static
+enum mad_flow calljack_input(void *data,
+		    struct mad_stream *stream)
+{
+	struct buffer *buffer = data;
+	
+	if (!buffer->length)
+	return MAD_FLOW_STOP;
+	
+	mad_stream_buffer(stream, buffer->start, buffer->length);
+	
+	buffer->length = 0;
+	
+	return MAD_FLOW_CONTINUE;
+}
+
+/*
+ * This is the output callback function. It is called after each frame of
+ * MPEG audio data has been completely decoded. The purpose of this callback
+ * is to output (or play) the decoded PCM audio.
+ */
+
+static
+enum mad_flow callback_output(void *data,
+		     struct mad_header const *header,
+		     struct mad_pcm *pcm)
+{
+	unsigned int nchannels, nsamples;
+	mad_fixed_t const *left_ch, *right_ch;
+	
+	/* pcm->samplerate contains the sampling frequency */
+	
+	nchannels = pcm->channels;
+	nsamples  = pcm->length;
+	left_ch   = pcm->samples[0];
+	right_ch  = pcm->samples[1];
+	
+	while (nsamples--) {
+		signed int sample;
+		
+		/* output sample(s) in 16-bit signed little-endian PCM */
+		
+		sample = scale(*left_ch++);
+		putchar((sample >> 0) & 0xff);
+		putchar((sample >> 8) & 0xff);
+		
+		if (nchannels == 2) {
+			sample = scale(*right_ch++);
+			putchar((sample >> 0) & 0xff);
+			putchar((sample >> 8) & 0xff);
+		}
+	}
+	
+	return MAD_FLOW_CONTINUE;
+}
+
+
+/*
+ * This is the error callback function. It is called whenever a decoding
+ * error occurs. The error is indicated by stream->error; the list of
+ * possible MAD_ERROR_* errors can be found in the mad.h (or stream.h)
+ * header file.
+ */
+
+static
+enum mad_flow callback_error(void *data,
+		    struct mad_stream *stream,
+		    struct mad_frame *frame)
+{
+  struct buffer *buffer = data;
+
+  fprintf(stderr, "decoding error 0x%04x (%s) at byte offset %u\n",
+	  stream->error, mad_stream_errorstr(stream),
+	  stream->this_frame - buffer->start);
+
+  /* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
+
+  return MAD_FLOW_CONTINUE;
+}
 
 
 
@@ -104,6 +204,7 @@ static int usage( const char * progname )
 
 int main(int argc, char *argv[])
 {
+	struct mad_decoder decoder;
 	jack_status_t status;
 	size_t ringbuffer_size = 0;
 	int i, opt;
@@ -155,16 +256,30 @@ int main(int argc, char *argv[])
 	}
 	
 	
+	// Initalise MAD
+	mad_decoder_init(&decoder, &buffer,
+		   calllback_input,
+		   0 /* header */,
+		   0 /* filter */,
+		   calllback_output,
+		   calllback_error,
+		   0 /* message */);
+	
+	
+	
+	
 
 	// Register the peak signal callback
-	jack_set_process_callback(client, proces_jack, 0);
-
+	jack_set_process_callback(client, calllback_jack, 0);
 
 	// Activate ourselves
 	if (jack_activate(client)) {
 		fprintf(stderr, "Cannot activate JACK client.\n");
 		exit(1);
 	}
+	
+	// Create decoding thread
+	// ** DO IT **
 
 
 	// Auto-connect our output ports ?
@@ -184,13 +299,15 @@ int main(int argc, char *argv[])
 	}
 	
 	
-	// Free up the ring buffers
-	jack_ringbuffer_free( ringbuffer[0] );
-	jack_ringbuffer_free( ringbuffer[1] );
-	
+	// Shut down decoder
+	mad_decoder_finish( &decoder );
 	
 	// Leave the jack graph 
 	jack_client_close(client);
+	
+	// Free up the ring buffers
+	jack_ringbuffer_free( ringbuffer[0] );
+	jack_ringbuffer_free( ringbuffer[1] );
 	
 
 	return 0;
