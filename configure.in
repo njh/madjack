@@ -1,13 +1,32 @@
-# Process this file with autoconf to produce a configure script.
-AC_INIT(madjack.c)
-AM_CONFIG_HEADER(config.h)
-AM_INIT_AUTOMAKE(madjack, 0.1)
 
-# Check for C compiler
+dnl Require autoconf version >= 2.57
+AC_PREREQ(2.57)
+
+
+dnl ############# Initialization
+
+AC_INIT([madjack], [0.1], [njh@ecs.soton.ac.uk])
+
+AC_CONFIG_SRCDIR( madjack.c )
+AC_CANONICAL_SYSTEM
+
+dnl Version 1.7 of automake is recommended
+AM_INIT_AUTOMAKE( 1.7 )
+AM_CONFIG_HEADER( build/config.h )
+
+
+
+dnl ############# Compiler and tools Checks
+
 AC_PROG_CC
-AC_C_CONST
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_C_INLINE
 
-# Checks for libraries.
+
+
+dnl ############## Library Checks
+
 AC_CHECK_LIB([pthread], [pthread_self], , [AC_MSG_ERROR(You need libpthread installed)])
 AC_CHECK_LIB([m], [sqrt], , [AC_MSG_ERROR(Can't find libm)])
 AC_CHECK_LIB([mx], [powf])
@@ -22,12 +41,15 @@ PKG_CHECK_MODULES(MAD, mad)
 PKG_CHECK_MODULES(LIBLO, liblo)
 
 
-# Checks for header files.
+
+dnl ############## Header Checks
+
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
 
-# Checks for functions.
-AC_CHECK_FUNCS( usleep )
+
+
+dnl ############## Final Output
 
 AC_OUTPUT([Makefile])
 
