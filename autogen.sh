@@ -67,8 +67,4 @@ run_cmd automake --add-missing --copy
 run_cmd autoconf
 
 
-$srcdir/configure
-
-echo
-echo "Now type './configure' to configure $package"
-echo
+$srcdir/configure && echo
