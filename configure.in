@@ -12,7 +12,7 @@ AC_CANONICAL_SYSTEM
 
 dnl Version 1.7 of automake is recommended
 AM_INIT_AUTOMAKE( 1.7 )
-AM_CONFIG_HEADER( build/config.h )
+AM_CONFIG_HEADER( config.h )
 
 
 
