@@ -132,7 +132,6 @@ enum mad_flow callback_output(void *data,
 		     struct mad_pcm *pcm)
 {
 	unsigned int nchannels, nsamples;
-	unsigned int spaceneeded;
 	mad_fixed_t const *left_ch, *right_ch;
 	
 	/* pcm->samplerate contains the sampling frequency */
@@ -141,9 +140,6 @@ enum mad_flow callback_output(void *data,
 	nsamples  = pcm->length;
 	left_ch   = pcm->samples[0];
 	right_ch  = pcm->samples[1];
-	
-	
-	spaceneeded = nsamples * sizeof(float);
 	
 	
 	
