@@ -37,6 +37,7 @@
 
 // ------- Constants -------
 #define RINGBUFFER_DURATION		(5.0)
+#define READ_BUFFER_SIZE		(10240)
 
 
 // ------- Globals -------
@@ -47,38 +48,43 @@ jack_client_t *client = NULL;
 int running = 1;
 int autoconnect = 0;
 
+FILE* input_file = NULL;
+
+
+#ifndef mad_f_tofloat
+#define mad_f_tofloat(x)	((float)  \
+				 ((x) / (float) (1L << MAD_F_FRACBITS)))
+#endif
+
+
+
 
 // Callback called by JACK when audio is available
 static int callback_jack(jack_nframes_t nframes, void *arg)
 {
-	jack_default_audio_sample_t *in;
-	unsigned int i;
+    size_t to_read = sizeof (jack_default_audio_sample_t) * nframes;
+	unsigned int c;
+	
 
+    // copy data to ringbuffer; one per channel
+    for (c=0; c < 2; c++)
+    {	
+		char *buf = (char*)jack_port_get_buffer(outport[c], nframes);
+		size_t len = jack_ringbuffer_read(ringbuffer[c], buf, to_read);
+		
+		// If we don't have enough audio, fill it up with silence
+		// (this is to deal with pausing etc.)
+		if (to_read > len)
+			bzero( buf+len, to_read - len );
+		
+		//if (len < to_read)
+		//	fprintf(stderr, "failed to read from ring buffer %d\n",c);
+    }
 
-	/* get the audio samples, and find the peak sample */
-	//in = (jack_default_audio_sample_t *) jack_port_get_buffer(input_port, nframes);
-	//for (i = 0; i < nframes; i++) {
-	//	const float s = fabs(in[i]);
-	//	if (s > peak) {
-	//		peak = s;
-	//	}
-	//}
-
-
+	// Success
 	return 0;
 }
 
-
-/*
- * This is a private message structure. A generic pointer to this structure
- * is passed to each of the callback functions. Put here any data you need
- * to access from within the callbacks.
- */
-
-struct buffer {
-  unsigned char const *start;
-  unsigned long length;
-};
 
 
 /*
@@ -90,20 +96,29 @@ struct buffer {
  */
 
 static
-enum mad_flow calljack_input(void *data,
+enum mad_flow callback_input(void *data,
 		    struct mad_stream *stream)
 {
-	struct buffer *buffer = data;
+	unsigned long bytes = 0;
+	unsigned char *buffer = (unsigned char *)malloc( READ_BUFFER_SIZE );
 	
-	if (!buffer->length)
-	return MAD_FLOW_STOP;
+	// No file open ?
+	if (input_file==NULL)
+		return MAD_FLOW_STOP;
 	
-	mad_stream_buffer(stream, buffer->start, buffer->length);
+	// Read in some bytes
+	bytes = fread( buffer, 1, READ_BUFFER_SIZE, input_file);
+	if (bytes==0)
+		return MAD_FLOW_STOP;
 	
-	buffer->length = 0;
+	mad_stream_buffer(stream, buffer, bytes);
+	
+	free(buffer);
 	
 	return MAD_FLOW_CONTINUE;
 }
+
+
 
 /*
  * This is the output callback function. It is called after each frame of
@@ -117,6 +132,7 @@ enum mad_flow callback_output(void *data,
 		     struct mad_pcm *pcm)
 {
 	unsigned int nchannels, nsamples;
+	unsigned int spaceneeded;
 	mad_fixed_t const *left_ch, *right_ch;
 	
 	/* pcm->samplerate contains the sampling frequency */
@@ -126,20 +142,33 @@ enum mad_flow callback_output(void *data,
 	left_ch   = pcm->samples[0];
 	right_ch  = pcm->samples[1];
 	
+	
+	spaceneeded = nsamples * sizeof(float);
+	
+	
+	
+	// Sleep until there is room in the ring buffer
+	while( jack_ringbuffer_write_space( ringbuffer[0] )
+	          < (nsamples * sizeof(float) ) )
+	{
+		sleep(1);
+		printf("Sleeping while there isn't enough room is ring buffer.\n");
+	}
+
+	
+	
+	
+	// Put samples into the ringbuffer
 	while (nsamples--) {
-		signed int sample;
+		jack_default_audio_sample_t sample;
+
+		// Convert sample for left channel
+		sample = mad_f_tofloat(*left_ch++);
+		jack_ringbuffer_write( ringbuffer[0], (char*)&sample, sizeof(sample) );
 		
-		/* output sample(s) in 16-bit signed little-endian PCM */
-		
-		sample = scale(*left_ch++);
-		putchar((sample >> 0) & 0xff);
-		putchar((sample >> 8) & 0xff);
-		
-		if (nchannels == 2) {
-			sample = scale(*right_ch++);
-			putchar((sample >> 0) & 0xff);
-			putchar((sample >> 8) & 0xff);
-		}
+		// Convert sample for right channel
+		if (nchannels == 2) sample = mad_f_tofloat(*right_ch++);
+		jack_ringbuffer_write( ringbuffer[1], (char*)&sample, sizeof(sample) );
 	}
 	
 	return MAD_FLOW_CONTINUE;
@@ -158,11 +187,9 @@ enum mad_flow callback_error(void *data,
 		    struct mad_stream *stream,
 		    struct mad_frame *frame)
 {
-  struct buffer *buffer = data;
 
-  fprintf(stderr, "decoding error 0x%04x (%s) at byte offset %u\n",
-	  stream->error, mad_stream_errorstr(stream),
-	  stream->this_frame - buffer->start);
+  fprintf(stderr, "decoding error 0x%04x (%s)\n",
+	  stream->error, mad_stream_errorstr(stream));
 
   /* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
 
@@ -200,6 +227,23 @@ static int usage( const char * progname )
 	exit(1);
 }
 
+
+void start_decoding(struct mad_decoder* decoder, char* filename )
+{
+	int result;
+
+	if (input_file) {
+		fclose(input_file);
+		input_file = NULL;
+	}
+	
+	input_file = fopen( filename, "r");
+	
+	// Start new thread for this:
+	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
+	fprintf(stderr, "mad_decoder_run returned %d\n", result);
+
+}
 
 
 int main(int argc, char *argv[])
@@ -257,20 +301,23 @@ int main(int argc, char *argv[])
 	
 	
 	// Initalise MAD
-	mad_decoder_init(&decoder, &buffer,
-		   calllback_input,
-		   0 /* header */,
-		   0 /* filter */,
-		   calllback_output,
-		   calllback_error,
-		   0 /* message */);
+	mad_decoder_init(
+		&decoder,
+		NULL, // data pointer 
+		callback_input,
+		NULL, // header
+		NULL, // filter
+		callback_output,
+		callback_error,
+		NULL // message
+	);
 	
 	
 	
 	
 
 	// Register the peak signal callback
-	jack_set_process_callback(client, calllback_jack, 0);
+	jack_set_process_callback(client, callback_jack, 0);
 
 	// Activate ourselves
 	if (jack_activate(client)) {
@@ -279,6 +326,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Create decoding thread
+	start_decoding( &decoder, "test.mp3" );
 	// ** DO IT **
 
 
@@ -288,7 +336,7 @@ int main(int argc, char *argv[])
 	}
 	
 
-	while (running) {
+	//while (running) {
 
 		// Check for key press
 		
@@ -296,7 +344,8 @@ int main(int argc, char *argv[])
 		
 		sleep(1);
 
-	}
+	//}
+	
 	
 	
 	// Shut down decoder
