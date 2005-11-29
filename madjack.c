@@ -40,6 +40,14 @@
 #define READ_BUFFER_SIZE		(10240)
 
 
+// ------- Structures -----
+typedef struct {
+	char* buffer;
+	int size;
+	FILE* file;
+	char* filename;
+} input_file;
+
 // ------- Globals -------
 jack_port_t *outport[2] = {NULL, NULL};
 jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
@@ -47,8 +55,7 @@ jack_client_t *client = NULL;
 
 int running = 1;
 int autoconnect = 0;
-
-FILE* input_file = NULL;
+input_file file;
 
 
 #ifndef mad_f_tofloat
@@ -227,6 +234,8 @@ static int usage( const char * progname )
 void start_decoding(struct mad_decoder* decoder, char* filename )
 {
 	int result;
+	input_file *file;
+
 
 	if (input_file) {
 		fclose(input_file);
