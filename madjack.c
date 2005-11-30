@@ -275,8 +275,9 @@ int usage( const char * progname )
 }
 
 
-void start_decoding(struct mad_decoder* decoder, input_file_t* input, char* filepath )
+void start_decoding(input_file_t* input, char* filepath )
 {
+	struct mad_decoder decoder;
 	int result;
 
 	if (input->file) {
@@ -287,10 +288,24 @@ void start_decoding(struct mad_decoder* decoder, input_file_t* input, char* file
 	input->file = fopen( filepath, "r");
 	input->filepath = filepath;
 	
+	// Initalise MAD
+	mad_decoder_init(
+		&decoder,			// decoder structure
+		input, 				// data pointer 
+		callback_input,		// input callback
+		callback_header, 	// header callback
+		NULL, 				// filter callback
+		callback_output,	// output callback
+		callback_error,		// error callback
+		NULL 				// message callback
+	);
+
 	// Start new thread for this:
-	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
+	result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
 	fprintf(stderr, "mad_decoder_run returned %d\n", result);
 
+	// Shut down decoder
+	mad_decoder_finish( &decoder );
 }
 
 
@@ -392,7 +407,6 @@ void finish_inputfile(input_file_t* ptr)
 
 int main(int argc, char *argv[])
 {
-	struct mad_decoder decoder;
 	input_file_t *input_file;
 	int opt;
 
@@ -419,17 +433,6 @@ int main(int argc, char *argv[])
 	input_file = init_inputfile();
 	
 	
-	// Initalise MAD
-	mad_decoder_init(
-		&decoder,			// decoder structure
-		input_file, 		// data pointer 
-		callback_input,		// input callback
-		callback_header, 	// header callback
-		NULL, 				// filter callback
-		callback_output,	// output callback
-		callback_error,		// error callback
-		NULL 				// message callback
-	);
 	
 	
 	
@@ -443,7 +446,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Create decoding thread
-	start_decoding( &decoder, input_file, "test.mp3" );
+	start_decoding( input_file, "test.mp3" );
 	// ** DO IT **
 
 
@@ -465,8 +468,6 @@ int main(int argc, char *argv[])
 	
 	
 	
-	// Shut down decoder
-	mad_decoder_finish( &decoder );
 	
 	// Clean up JACK
 	finish_jack();
