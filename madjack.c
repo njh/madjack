@@ -42,11 +42,14 @@
 
 // ------- Structures -----
 typedef struct {
-	char* buffer;
-	int size;
+	unsigned char* buffer;
+	unsigned int buffer_size;
+	unsigned int buffer_used;
 	FILE* file;
-	char* filename;
-} input_file;
+	char* name;
+	char* filepath;
+} input_file_t;
+
 
 // ------- Globals -------
 jack_port_t *outport[2] = {NULL, NULL};
@@ -55,7 +58,6 @@ jack_client_t *client = NULL;
 
 int running = 1;
 int autoconnect = 0;
-input_file file;
 
 
 #ifndef mad_f_tofloat
@@ -106,21 +108,18 @@ static
 enum mad_flow callback_input(void *data,
 		    struct mad_stream *stream)
 {
-	unsigned long bytes = 0;
-	unsigned char *buffer = (unsigned char *)malloc( READ_BUFFER_SIZE );
+	input_file_t *input = data;
 	
 	// No file open ?
-	if (input_file==NULL)
+	if (input==NULL)
 		return MAD_FLOW_STOP;
 	
 	// Read in some bytes
-	bytes = fread( buffer, 1, READ_BUFFER_SIZE, input_file);
-	if (bytes==0)
+	input->buffer_used = fread( input->buffer, 1, input->buffer_size, input->file);
+	if (input->buffer_used==0)
 		return MAD_FLOW_STOP;
 	
-	mad_stream_buffer(stream, buffer, bytes);
-	
-	free(buffer);
+	mad_stream_buffer(stream, input->buffer, input->buffer_used);
 	
 	return MAD_FLOW_CONTINUE;
 }
@@ -190,13 +189,14 @@ enum mad_flow callback_error(void *data,
 		    struct mad_stream *stream,
 		    struct mad_frame *frame)
 {
-
-  fprintf(stderr, "decoding error 0x%04x (%s)\n",
-	  stream->error, mad_stream_errorstr(stream));
-
-  /* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
-
-  return MAD_FLOW_CONTINUE;
+	//input_file_t *input = data;
+	
+	fprintf(stderr, "decoding error 0x%04x (%s)\n",
+	stream->error, mad_stream_errorstr(stream));
+	
+	/* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
+	
+	return MAD_FLOW_CONTINUE;
 }
 
 
@@ -231,18 +231,17 @@ static int usage( const char * progname )
 }
 
 
-void start_decoding(struct mad_decoder* decoder, char* filename )
+void start_decoding(struct mad_decoder* decoder, input_file_t* input, char* filepath )
 {
 	int result;
-	input_file *file;
 
-
-	if (input_file) {
-		fclose(input_file);
-		input_file = NULL;
+	if (input->file) {
+		fclose(input->file);
+		input->file = NULL;
 	}
 	
-	input_file = fopen( filename, "r");
+	input->file = fopen( filepath, "r");
+	input->filepath = filepath;
 	
 	// Start new thread for this:
 	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
@@ -251,28 +250,11 @@ void start_decoding(struct mad_decoder* decoder, char* filename )
 }
 
 
-int main(int argc, char *argv[])
+void init_jack() 
 {
-	struct mad_decoder decoder;
 	jack_status_t status;
 	size_t ringbuffer_size = 0;
-	int i, opt;
-
-	while ((opt = getopt(argc, argv, "ahv")) != -1) {
-		switch (opt) {
-			case 'a':
-				// Autoconnect our output ports
-				autoconnect = 1;
-				break;
-		
-			default:
-				// Show usage/version information
-				usage( argv[0] );
-				break;
-		}
-	}
-
-
+	int i;
 
 	// Register with Jack
 	if ((client = jack_client_open("madjack", JackNullOption, &status)) == 0) {
@@ -303,12 +285,73 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 	}
+
+
+	// Register the peak signal callback
+	jack_set_process_callback(client, callback_jack, 0);
+	
+}
+
+
+input_file_t* init_inputfile()
+{
+	input_file_t* ptr;
+	
+	// Allocate memory for data structure
+	ptr = malloc( sizeof( input_file_t ) );
+	if (ptr == NULL) {
+		fprintf(stderr, "Failed to allocate memory for input file record.\n");
+		exit(1);
+	}
+
+	// Zero memory
+	bzero( ptr, sizeof( input_file_t ) );
+	
+	// Allocate memory for read buffer
+	ptr->buffer_size = READ_BUFFER_SIZE;
+	ptr->buffer = malloc( ptr->buffer_size );
+	if (ptr->buffer == NULL) {
+		fprintf(stderr, "Failed to allocate memory for read buffer.\n");
+		exit(1);
+	}
+	
+	return ptr;
+}
+
+
+int main(int argc, char *argv[])
+{
+	struct mad_decoder decoder;
+	input_file_t *input_file;
+	int opt;
+
+	while ((opt = getopt(argc, argv, "ahv")) != -1) {
+		switch (opt) {
+			case 'a':
+				// Autoconnect our output ports
+				autoconnect = 1;
+				break;
+		
+			default:
+				// Show usage/version information
+				usage( argv[0] );
+				break;
+		}
+	}
+
+
+
+	// Initialise JACK
+	init_jack();
+
+	// Initialse Input File Data Structure
+	input_file = init_inputfile();
 	
 	
 	// Initalise MAD
 	mad_decoder_init(
 		&decoder,
-		NULL, // data pointer 
+		input_file, // data pointer 
 		callback_input,
 		NULL, // header
 		NULL, // filter
@@ -321,17 +364,15 @@ int main(int argc, char *argv[])
 	
 	
 
-	// Register the peak signal callback
-	jack_set_process_callback(client, callback_jack, 0);
 
-	// Activate ourselves
+	// Activate JACK
 	if (jack_activate(client)) {
 		fprintf(stderr, "Cannot activate JACK client.\n");
 		exit(1);
 	}
 	
 	// Create decoding thread
-	start_decoding( &decoder, "test.mp3" );
+	start_decoding( &decoder, input_file, "test.mp3" );
 	// ** DO IT **
 
 
