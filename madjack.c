@@ -26,38 +26,21 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <termios.h>
 
 #include <lo/lo.h>
 #include <mad.h>
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <getopt.h>
+
+
+#include "control.h"
+#include "madjack.h"
+#include "maddecode.h"
 #include "config.h"
 
-
-// ------- Constants -------
-#define RINGBUFFER_DURATION		(4.0)
-#define READ_BUFFER_SIZE		(2048)
-
-enum madjack_state {
-	MADJACK_STATE_PLAYING,		// Deck is playing
-	MADJACK_STATE_PAUSED,		// Deck is paused in mid-playback
-	MADJACK_STATE_READY,		// Deck is loaded and ready to play
-	MADJACK_STATE_STOPPED,		// Deck is stopped (mid-track or at end)
-	MADJACK_STATE_EMPTY,		// No track is loaded in deck
-	MADJACK_STATE_QUIT			// Time to quit
-};
-
-
-// ------- Structures -----
-typedef struct {
-	unsigned char* buffer;
-	unsigned int buffer_size;
-	unsigned int buffer_used;
-	FILE* file;
-	char* name;
-	char* filepath;
-} input_file_t;
 
 
 // ------- Globals -------
@@ -66,16 +49,7 @@ jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
 jack_client_t *client = NULL;
 
 int state = MADJACK_STATE_EMPTY;
-int autoconnect = 0;
-int duration = 0;		// Total duration (in samples)
 
-
-
-// ------- Macros -------
-#ifndef mad_f_tofloat
-#define mad_f_tofloat(x)	((float)  \
-				 ((x) / (float) (1L << MAD_F_FRACBITS)))
-#endif
 
 
 
@@ -87,21 +61,30 @@ int callback_jack(jack_nframes_t nframes, void *arg)
     size_t to_read = sizeof (jack_default_audio_sample_t) * nframes;
 	unsigned int c;
 	
-
-    // copy data to ringbuffer; one per channel
-    for (c=0; c < 2; c++)
-    {	
+	for (c=0; c < 2; c++)
+	{	
 		char *buf = (char*)jack_port_get_buffer(outport[c], nframes);
-		size_t len = jack_ringbuffer_read(ringbuffer[c], buf, to_read);
+		size_t len = 0;
+
+		// What state are we in ?
+		if (state == MADJACK_STATE_PLAYING) {
+		
+			// Copy data from ring buffer to output buffer
+			len += jack_ringbuffer_read(ringbuffer[c], buf, to_read);
+			
+			if (len < to_read) {
+				// *FIXME:* are we still decoding ?
+				fprintf(stderr, "ringbuffer underrun.\n");
+			}
+		}
 		
 		// If we don't have enough audio, fill it up with silence
 		// (this is to deal with pausing etc.)
 		if (to_read > len)
 			bzero( buf+len, to_read - len );
 		
-		//if (len < to_read)
-		//	fprintf(stderr, "failed to read from ring buffer %d\n",c);
-    }
+	}
+
 
 	// Success
 	return 0;
@@ -109,138 +92,6 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 
 
 
-/*
- * This is the MAD input callback. The purpose of this callback is to (re)fill
- * the stream buffer which is to be decoded. In this example, an entire file
- * has been mapped into memory, so we just call mad_stream_buffer() with the
- * address and length of the mapping. When this callback is called a second
- * time, we are finished decoding.
- */
-
-static
-enum mad_flow callback_input(void *data,
-		    struct mad_stream *stream)
-{
-	input_file_t *input = data;
-	
-	// No file open ?
-	if (input->file==NULL)
-		return MAD_FLOW_STOP;
-
-	// At end of file ?
-	if (feof(input->file))
-		return MAD_FLOW_STOP;
-	
-	// Any unused bytes left in buffer ?
-	if(stream->next_frame) {
-		unsigned int unused_bytes = input->buffer + input->buffer_used - stream->next_frame;
-		memmove(input->buffer, stream->next_frame, unused_bytes);
-		input->buffer_used = unused_bytes;
-	}
-
-	// Read in some bytes
-	input->buffer_used += fread( input->buffer + input->buffer_used, 1, input->buffer_size - input->buffer_used, input->file);
-	if (input->buffer_used==0)
-		return MAD_FLOW_STOP;
-	
-	mad_stream_buffer(stream, input->buffer, input->buffer_used);
-	
-	return MAD_FLOW_CONTINUE;
-}
-
-
-
-/*
- * This is the output callback function. It is called after each frame of
- * MPEG audio data has been completely decoded. The purpose of this callback
- * is to output (or play) the decoded PCM audio.
- */
-
-static
-enum mad_flow callback_output(void *data,
-		     struct mad_header const *header,
-		     struct mad_pcm *pcm)
-{
-	unsigned int nsamples;
-	mad_fixed_t const *left_ch, *right_ch;
-	
-	/* pcm->samplerate contains the sampling frequency */
-	nsamples  = pcm->length;
-	left_ch   = pcm->samples[0];
-	right_ch  = pcm->samples[1];
-	
-	
-	
-	// Sleep until there is room in the ring buffer
-	while( jack_ringbuffer_write_space( ringbuffer[0] )
-	          < (nsamples * sizeof(float) ) )
-	{
-		// Sleep for a quarter of the total ring buffer length
-		usleep((RINGBUFFER_DURATION/4)*1000000);
-		printf("Sleeping while there isn't enough room in ring buffer.\n");
-	}
-
-
-	// Put samples into the ringbuffer
-	while (nsamples--) {
-		jack_default_audio_sample_t sample;
-
-		// Convert sample for left channel
-		sample = mad_f_tofloat(*left_ch++);
-		jack_ringbuffer_write( ringbuffer[0], (char*)&sample, sizeof(sample) );
-		
-		// Convert sample for right channel
-		if (pcm->channels == 2) sample = mad_f_tofloat(*right_ch++);
-		jack_ringbuffer_write( ringbuffer[1], (char*)&sample, sizeof(sample) );
-	}
-	
-	return MAD_FLOW_CONTINUE;
-}
-
-
-/*
- * Check the header of frames of MPEG Audio to make sure
- * that they are what we are expecting.
- */
-
-static
-enum mad_flow callback_header(void *data,
-		struct mad_header const *header)
-{
-	//printf("samplerate of file: %d\n", header->samplerate);
-	if (jack_get_sample_rate( client ) != header->samplerate) {
-		printf("Error: Sample rate of input file (%d) is different to JACKs (%d)\n",
-				header->samplerate, jack_get_sample_rate( client ) );
-		
-		return MAD_FLOW_BREAK;
-	}
-
-	return MAD_FLOW_CONTINUE;
-}
-
-
-
-/*
- * This is the error callback function. It is called whenever a decoding
- * error occurs. The error is indicated by stream->error; the list of
- * possible MAD_ERROR_* errors can be found in the mad.h (or stream.h)
- * header file.
- */
-
-static
-enum mad_flow callback_error(void *data,
-		    struct mad_stream *stream,
-		    struct mad_frame *frame)
-{
-	//input_file_t *input = data;
-	
-	fprintf(stderr, "Decoding error 0x%04x (%s)\n",
-		stream->error, mad_stream_errorstr(stream));
-	
-	/* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
-	
-	return MAD_FLOW_CONTINUE;
-}
 
 
 
@@ -275,37 +126,33 @@ int usage( const char * progname )
 }
 
 
-void start_decoding(input_file_t* input, char* filepath )
-{
-	struct mad_decoder decoder;
-	int result;
 
+
+void load_inputfile(input_file_t* input, char* filepath )
+{
+	int result;
+	
+	// Eject the previous file ?
 	if (input->file) {
 		fclose(input->file);
 		input->file = NULL;
 	}
 	
-	input->file = fopen( filepath, "r");
+	// Open the new file
 	input->filepath = filepath;
+	input->file = fopen( filepath, "r" );
+	if (input->file==NULL) {
+		perror("Failed to open input file");
+		return;
+	}
 	
-	// Initalise MAD
-	mad_decoder_init(
-		&decoder,			// decoder structure
-		input, 				// data pointer 
-		callback_input,		// input callback
-		callback_header, 	// header callback
-		NULL, 				// filter callback
-		callback_output,	// output callback
-		callback_error,		// error callback
-		NULL 				// message callback
-	);
+	// Set the decoder running
+	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
+	if (result) {
+		printf("Error: return code from pthread_create() is %d\n", result);
+		exit(-1);
+	}
 
-	// Start new thread for this:
-	result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
-	fprintf(stderr, "mad_decoder_run returned %d\n", result);
-
-	// Shut down decoder
-	mad_decoder_finish( &decoder );
 }
 
 
@@ -404,9 +251,9 @@ void finish_inputfile(input_file_t* ptr)
 	free( ptr );
 }
 
-
 int main(int argc, char *argv[])
 {
+	int autoconnect = 0;
 	input_file_t *input_file;
 	int opt;
 
@@ -433,40 +280,30 @@ int main(int argc, char *argv[])
 	input_file = init_inputfile();
 	
 	
-	
-	
-	
-	
-
-
 	// Activate JACK
 	if (jack_activate(client)) {
 		fprintf(stderr, "Cannot activate JACK client.\n");
 		exit(1);
 	}
 	
-	// Create decoding thread
-	start_decoding( input_file, "test.mp3" );
-	// ** DO IT **
-
-
 	// Auto-connect our output ports ?
 	if (autoconnect) {
 		// *FIXME*
 	}
-	
 
-	//while (state != MADJACK_STATE_QUIT) {
 
-		// Check for key press
-		
-		// Anything else ?
-		
-		sleep(1);
+	// Load a file (and start decoding)
+	load_inputfile( input_file, "003548.mp3" );
 
-	//}
+
+
+	// Handle user keypresses
+	handle_keypresses();
+
 	
-	
+	// Wait for decoder thread to terminate
+	printf("Waiting for decoder thread to finish.\n");
+	pthread_join( decoder_thread, NULL);
 	
 	
 	// Clean up JACK

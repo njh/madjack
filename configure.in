@@ -46,6 +46,11 @@ dnl ############## Header Checks
 
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS( [termios.h] )
+
+
+dnl ############## Function Checks
+AC_CHECK_FUNCS( atexit usleep )
 
 
 
