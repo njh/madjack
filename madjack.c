@@ -36,8 +36,17 @@
 
 
 // ------- Constants -------
-#define RINGBUFFER_DURATION		(5.0)
-#define READ_BUFFER_SIZE		(10240)
+#define RINGBUFFER_DURATION		(4.0)
+#define READ_BUFFER_SIZE		(2048)
+
+enum madjack_state {
+	MADJACK_STATE_PLAYING,		// Deck is playing
+	MADJACK_STATE_PAUSED,		// Deck is paused in mid-playback
+	MADJACK_STATE_READY,		// Deck is loaded and ready to play
+	MADJACK_STATE_STOPPED,		// Deck is stopped (mid-track or at end)
+	MADJACK_STATE_EMPTY,		// No track is loaded in deck
+	MADJACK_STATE_QUIT			// Time to quit
+};
 
 
 // ------- Structures -----
@@ -56,10 +65,13 @@ jack_port_t *outport[2] = {NULL, NULL};
 jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
 jack_client_t *client = NULL;
 
-int running = 1;
+int state = MADJACK_STATE_EMPTY;
 int autoconnect = 0;
+int duration = 0;		// Total duration (in samples)
 
 
+
+// ------- Macros -------
 #ifndef mad_f_tofloat
 #define mad_f_tofloat(x)	((float)  \
 				 ((x) / (float) (1L << MAD_F_FRACBITS)))
@@ -69,7 +81,8 @@ int autoconnect = 0;
 
 
 // Callback called by JACK when audio is available
-static int callback_jack(jack_nframes_t nframes, void *arg)
+static
+int callback_jack(jack_nframes_t nframes, void *arg)
 {
     size_t to_read = sizeof (jack_default_audio_sample_t) * nframes;
 	unsigned int c;
@@ -111,11 +124,22 @@ enum mad_flow callback_input(void *data,
 	input_file_t *input = data;
 	
 	// No file open ?
-	if (input==NULL)
+	if (input->file==NULL)
+		return MAD_FLOW_STOP;
+
+	// At end of file ?
+	if (feof(input->file))
 		return MAD_FLOW_STOP;
 	
+	// Any unused bytes left in buffer ?
+	if(stream->next_frame) {
+		unsigned int unused_bytes = input->buffer + input->buffer_used - stream->next_frame;
+		memmove(input->buffer, stream->next_frame, unused_bytes);
+		input->buffer_used = unused_bytes;
+	}
+
 	// Read in some bytes
-	input->buffer_used = fread( input->buffer, 1, input->buffer_size, input->file);
+	input->buffer_used += fread( input->buffer + input->buffer_used, 1, input->buffer_size - input->buffer_used, input->file);
 	if (input->buffer_used==0)
 		return MAD_FLOW_STOP;
 	
@@ -137,12 +161,10 @@ enum mad_flow callback_output(void *data,
 		     struct mad_header const *header,
 		     struct mad_pcm *pcm)
 {
-	unsigned int nchannels, nsamples;
+	unsigned int nsamples;
 	mad_fixed_t const *left_ch, *right_ch;
 	
 	/* pcm->samplerate contains the sampling frequency */
-	
-	nchannels = pcm->channels;
 	nsamples  = pcm->length;
 	left_ch   = pcm->samples[0];
 	right_ch  = pcm->samples[1];
@@ -153,13 +175,12 @@ enum mad_flow callback_output(void *data,
 	while( jack_ringbuffer_write_space( ringbuffer[0] )
 	          < (nsamples * sizeof(float) ) )
 	{
-		sleep(1);
-		printf("Sleeping while there isn't enough room is ring buffer.\n");
+		// Sleep for a quarter of the total ring buffer length
+		usleep((RINGBUFFER_DURATION/4)*1000000);
+		printf("Sleeping while there isn't enough room in ring buffer.\n");
 	}
 
-	
-	
-	
+
 	// Put samples into the ringbuffer
 	while (nsamples--) {
 		jack_default_audio_sample_t sample;
@@ -169,12 +190,34 @@ enum mad_flow callback_output(void *data,
 		jack_ringbuffer_write( ringbuffer[0], (char*)&sample, sizeof(sample) );
 		
 		// Convert sample for right channel
-		if (nchannels == 2) sample = mad_f_tofloat(*right_ch++);
+		if (pcm->channels == 2) sample = mad_f_tofloat(*right_ch++);
 		jack_ringbuffer_write( ringbuffer[1], (char*)&sample, sizeof(sample) );
 	}
 	
 	return MAD_FLOW_CONTINUE;
 }
+
+
+/*
+ * Check the header of frames of MPEG Audio to make sure
+ * that they are what we are expecting.
+ */
+
+static
+enum mad_flow callback_header(void *data,
+		struct mad_header const *header)
+{
+	//printf("samplerate of file: %d\n", header->samplerate);
+	if (jack_get_sample_rate( client ) != header->samplerate) {
+		printf("Error: Sample rate of input file (%d) is different to JACKs (%d)\n",
+				header->samplerate, jack_get_sample_rate( client ) );
+		
+		return MAD_FLOW_BREAK;
+	}
+
+	return MAD_FLOW_CONTINUE;
+}
+
 
 
 /*
@@ -191,8 +234,8 @@ enum mad_flow callback_error(void *data,
 {
 	//input_file_t *input = data;
 	
-	fprintf(stderr, "decoding error 0x%04x (%s)\n",
-	stream->error, mad_stream_errorstr(stream));
+	fprintf(stderr, "Decoding error at 0x%04x (%s)\n",
+		stream->error, mad_stream_errorstr(stream));
 	
 	/* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
 	
@@ -223,7 +266,8 @@ enum mad_flow callback_error(void *data,
 
 
 /* Display how to use this program */
-static int usage( const char * progname )
+static
+int usage( const char * progname )
 {
 	fprintf(stderr, "madjack version %s\n\n", VERSION);
 	fprintf(stderr, "Usage %s [<filemame>]\n\n", progname);
@@ -278,7 +322,7 @@ void init_jack()
 	
 	// Create ring buffers
 	ringbuffer_size = jack_get_sample_rate( client ) * RINGBUFFER_DURATION * sizeof(float);
-	fprintf(stderr,"Size of ring buffers is %2.2f seconds (%d bytes).\n", RINGBUFFER_DURATION, (int)ringbuffer_size );
+	fprintf(stderr,"Size of the ring buffers is %2.2f seconds (%d bytes).\n", RINGBUFFER_DURATION, (int)ringbuffer_size );
 	for(i=0; i<2; i++) {
 		if (!(ringbuffer[i] = jack_ringbuffer_create( ringbuffer_size ))) {
 			fprintf(stderr, "Cannot create ringbuffer.\n");
@@ -287,9 +331,20 @@ void init_jack()
 	}
 
 
-	// Register the peak signal callback
-	jack_set_process_callback(client, callback_jack, 0);
+	// Register callback
+	jack_set_process_callback(client, callback_jack, NULL);
 	
+}
+
+
+void finish_jack()
+{
+	// Leave the Jack graph
+	jack_client_close(client);
+	
+	// Free up the ring buffers
+	jack_ringbuffer_free( ringbuffer[0] );
+	jack_ringbuffer_free( ringbuffer[1] );
 }
 
 
@@ -316,6 +371,22 @@ input_file_t* init_inputfile()
 	}
 	
 	return ptr;
+}
+
+
+void finish_inputfile(input_file_t* ptr)
+{
+	// File still open?
+	if (ptr->file) {
+		fclose( ptr->file );
+		ptr->file = NULL;
+	}
+
+	// Free up memory used by buffer
+	if (ptr->buffer) free( ptr->buffer );
+	
+	// Free up main data structure memory
+	free( ptr );
 }
 
 
@@ -353,7 +424,7 @@ int main(int argc, char *argv[])
 		&decoder,
 		input_file, // data pointer 
 		callback_input,
-		NULL, // header
+		callback_header, // header
 		NULL, // filter
 		callback_output,
 		callback_error,
@@ -382,7 +453,7 @@ int main(int argc, char *argv[])
 	}
 	
 
-	//while (running) {
+	//while (state != MADJACK_STATE_QUIT) {
 
 		// Check for key press
 		
@@ -397,12 +468,12 @@ int main(int argc, char *argv[])
 	// Shut down decoder
 	mad_decoder_finish( &decoder );
 	
-	// Leave the jack graph 
-	jack_client_close(client);
+	// Clean up JACK
+	finish_jack();
 	
-	// Free up the ring buffers
-	jack_ringbuffer_free( ringbuffer[0] );
-	jack_ringbuffer_free( ringbuffer[1] );
+	
+	// Clean up data structure memory
+	finish_inputfile( input_file );
 	
 
 	return 0;
