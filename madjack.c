@@ -234,7 +234,7 @@ enum mad_flow callback_error(void *data,
 {
 	//input_file_t *input = data;
 	
-	fprintf(stderr, "Decoding error at 0x%04x (%s)\n",
+	fprintf(stderr, "Decoding error 0x%04x (%s)\n",
 		stream->error, mad_stream_errorstr(stream));
 	
 	/* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
@@ -421,14 +421,14 @@ int main(int argc, char *argv[])
 	
 	// Initalise MAD
 	mad_decoder_init(
-		&decoder,
-		input_file, // data pointer 
-		callback_input,
-		callback_header, // header
-		NULL, // filter
-		callback_output,
-		callback_error,
-		NULL // message
+		&decoder,			// decoder structure
+		input_file, 		// data pointer 
+		callback_input,		// input callback
+		callback_header, 	// header callback
+		NULL, 				// filter callback
+		callback_output,	// output callback
+		callback_error,		// error callback
+		NULL 				// message callback
 	);
 	
 	
