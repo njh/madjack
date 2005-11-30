@@ -74,19 +74,41 @@ set_input_mode (void)
 }
 
 
-
+// Start playing
 void do_play()
 {
 	printf("do_play()\n");
-	state = MADJACK_STATE_PLAYING;
+	
+	if (get_state() == MADJACK_STATE_STOPPED) {
+		
+	}
 
+	set_state( MADJACK_STATE_PLAYING );
+}
+
+
+// Prepare 
+void do_cue()
+{
+	printf("do_cue()\n");
+	set_state( MADJACK_STATE_LOADING );
+
+	// Open the new file
+	input_file->filepath = filepath;
+	input_file->file = fopen( input->filepath, "r" );
+	if (input_file->file==NULL) {
+		perror("Failed to open input file");
+		return;
+	}
+	
+	// Set the decoder running
+	start_decoder_thread( input_file );
 }
 
 void do_pause()
 {
 	printf("do_pause()\n");
-	state = MADJACK_STATE_PAUSED;
-
+	set_state( MADJACK_STATE_PAUSED );
 
 }
 
@@ -94,7 +116,7 @@ void do_pause()
 void do_stop()
 {
 	printf("do_stop()\n");
-	state = MADJACK_STATE_STOPPED;
+	set_state( MADJACK_STATE_STOPPED );
 
 
 }
@@ -102,7 +124,7 @@ void do_stop()
 void do_eject()
 {
 	printf("do_eject()\n");
-	state = MADJACK_STATE_EMPTY;
+	set_state( MADJACK_STATE_EMPTY );
 
 
 }
@@ -110,14 +132,27 @@ void do_eject()
 void do_load( char* name )
 {
 	printf("do_load(%s)\n", name);
-	state = MADJACK_STATE_LOADING;
+	
+	// Eject the previous file ?
+	if (input->file) {
+		fclose(input->file);
+		input->file = NULL;
+	}
+	
+	// Change state to loading
+	set_state( MADJACK_STATE_LOADING );
+	
+	// Open the new file
+	input->filepath = filepath;
 
+	// Cue up the file	
+	do_cue();
 }
 
 void do_quit()
 {
 	printf("do_quit()\n");
-	state = MADJACK_STATE_QUIT;
+	set_state( MADJACK_STATE_QUIT );
 
 }
 
@@ -130,13 +165,13 @@ void handle_keypresses()
 	set_input_mode( );
 	
 	// Check for keypresses
-	while (state != MADJACK_STATE_QUIT) {
+	while (get_state() != MADJACK_STATE_QUIT) {
 
 		// Get keypress
 		int c = fgetc( stdin );
 		switch(c) {
 			case 'p': 
-				if (state == MADJACK_STATE_PLAYING) {
+				if (get_state() == MADJACK_STATE_PLAYING) {
 					do_pause();
 				} else {
 					do_play();

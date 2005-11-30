@@ -48,6 +48,7 @@ jack_port_t *outport[2] = {NULL, NULL};
 jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
 jack_client_t *client = NULL;
 
+input_file_t *input_file = NULL;
 int state = MADJACK_STATE_EMPTY;
 
 
@@ -67,14 +68,20 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 		size_t len = 0;
 
 		// What state are we in ?
-		if (state == MADJACK_STATE_PLAYING) {
+		if (get_state() == MADJACK_STATE_PLAYING) {
 		
 			// Copy data from ring buffer to output buffer
 			len += jack_ringbuffer_read(ringbuffer[c], buf, to_read);
 			
+			// Not enough samples ?
 			if (len < to_read) {
-				// *FIXME:* are we still decoding ?
-				fprintf(stderr, "ringbuffer underrun.\n");
+				if (is_decoding) {
+					fprintf(stderr, "ringbuffer underrun.\n");
+					usleep(1000);
+				} else {
+					// Assume we have reached the end of the file
+					set_state( MADJACK_STATE_STOPPED );
+				}
 			}
 		}
 		
@@ -127,33 +134,6 @@ int usage( const char * progname )
 
 
 
-
-void load_inputfile(input_file_t* input, char* filepath )
-{
-	int result;
-	
-	// Eject the previous file ?
-	if (input->file) {
-		fclose(input->file);
-		input->file = NULL;
-	}
-	
-	// Open the new file
-	input->filepath = filepath;
-	input->file = fopen( filepath, "r" );
-	if (input->file==NULL) {
-		perror("Failed to open input file");
-		return;
-	}
-	
-	// Set the decoder running
-	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
-	if (result) {
-		printf("Error: return code from pthread_create() is %d\n", result);
-		exit(-1);
-	}
-
-}
 
 
 void init_jack() 
@@ -251,10 +231,23 @@ void finish_inputfile(input_file_t* ptr)
 	free( ptr );
 }
 
+
+enum madjack_state state get_state()
+{
+	return state;
+}
+
+
+void set_state( enum madjack_state new_state )
+{
+	printf("State changing from %d to %d.\n", state, new_state);
+	state = new_state;
+}
+
+
 int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
-	input_file_t *input_file;
 	int opt;
 
 	while ((opt = getopt(argc, argv, "ahv")) != -1) {
@@ -302,8 +295,7 @@ int main(int argc, char *argv[])
 
 	
 	// Wait for decoder thread to terminate
-	printf("Waiting for decoder thread to finish.\n");
-	pthread_join( decoder_thread, NULL);
+	finish_decoder_thread();
 	
 	
 	// Clean up JACK

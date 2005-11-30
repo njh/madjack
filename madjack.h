@@ -36,8 +36,8 @@
 enum madjack_state {
 	MADJACK_STATE_PLAYING,		// Deck is playing
 	MADJACK_STATE_PAUSED,		// Deck is paused in mid-playback
-	MADJACK_STATE_LOADING,		// In process of loading deck
 	MADJACK_STATE_READY,		// Deck is loaded and ready to play
+	MADJACK_STATE_LOADING,		// In process of loading deck
 	MADJACK_STATE_STOPPED,		// Deck is stopped (mid-track or at end)
 	MADJACK_STATE_EMPTY,		// No track is loaded in deck
 	MADJACK_STATE_QUIT			// Time to quit
@@ -57,9 +57,12 @@ typedef struct {
 extern jack_port_t *outport[2];
 extern jack_ringbuffer_t *ringbuffer[2];
 extern jack_client_t *client;
-extern int state;
+extern input_file_t *input_file;
 
 
+// ------- Prototypes -------
+enum madjack_state get_state();
+void set_state( enum madjack_state new_state );
 
 
 #endif

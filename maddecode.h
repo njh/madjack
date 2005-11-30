@@ -27,10 +27,12 @@
 
 
 // Gobals
-extern pthread_t decoder_thread;
+extern int is_decoding;
+
 
 // Prototypes
-void *thread_decode_mad(void *input);
+void start_decoder_thread(void *input);
+void finish_decoder_thread();
 
 
 #ifndef mad_f_tofloat
