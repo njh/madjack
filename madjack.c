@@ -29,7 +29,6 @@
 #include <termios.h>
 
 #include <lo/lo.h>
-#include <mad.h>
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <getopt.h>

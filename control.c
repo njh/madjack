@@ -147,6 +147,8 @@ void do_cue()
 	
 }
 
+
+// Pause Deck (if playing)
 void do_pause()
 {
 	printf("do_pause()\n");
@@ -162,6 +164,7 @@ void do_pause()
 }
 
 
+// Stop deck (and close down decoder)
 void do_stop()
 {
 	printf("do_stop()\n");
@@ -180,6 +183,8 @@ void do_stop()
 
 }
 
+
+// Eject track from Deck
 void do_eject()
 {
 	printf("do_eject()\n");
@@ -215,6 +220,8 @@ void do_eject()
 	
 }
 
+
+// Load Track into Deck
 void do_load( char* name )
 {
 	printf("do_load(%s)\n", name);
@@ -245,7 +252,7 @@ void do_load( char* name )
 	}
 }
 
-
+// Quit MadJack
 void do_quit()
 {
 	printf("do_quit()\n");
