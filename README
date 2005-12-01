@@ -9,6 +9,65 @@ http://www.ecs.soton.ac.uk/~njh/madjack/
 What is MadJACK ?
 -----------------
 
-MadJACK is a MPEG Audio Deck for the jack audio connection kit.
+MadJACK is a MPEG Audio Deck for the Jack Audio Connection Kit.
+It was written as a backend for DJ music playback.
+
+It aims to achieve the following:
+ - Talk natively to JACK
+ - Easy to script / remote control
+ - High Quality audio
+ - Skip free playback
+ - Responsive / Low Latency
+ - Reliable / Not Crash
+
+It does not do the following:
+ - Decode metadata/ID3 tags
+ - Queue up multiple tracks
+ - Have playlists
 
 
+Terminal Interface
+------------------
+
+MadJACK accepts the following keys on 
+
+  h: Display help message
+  p: Play/Pause Deck
+  l: Load a Track
+  e: Eject current track
+  s: Stop Deck
+  c: Cue deck to start of track
+  q: Quit MadJack
+
+
+Command Line Interface
+----------------------
+
+madjack_remote <command>
+
+ play, pause, stop, cue, eject, load <filename>, status, position, ping
+
+
+OSC Interface
+-------------
+
+ /deck/play
+ /deck/pause		
+ /deck/stop			
+ /deck/cue
+ /deck/eject		
+ /deck/load <s>		
+
+
+ /deck/get_status
+ replies with:
+ /deck/status <s>
+ 
+ /deck/get_position
+ replies with:
+ /deck/position <f>
+  
+ /ping
+ replies with:
+ /pong
+ 
