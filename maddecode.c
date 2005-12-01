@@ -198,7 +198,7 @@ void *thread_decode_mad(void *input)
 
 	printf("Decoder thread started.\n");
 
-	// Initalise MAD
+	// Initalise the MAD decoder
 	mad_decoder_init(
 		&decoder,			// decoder structure
 		input, 				// data pointer 
@@ -212,7 +212,9 @@ void *thread_decode_mad(void *input)
 
 	// Start new thread for this:
 	result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
-	fprintf(stderr, "mad_decoder_run returned %d\n", result);
+	if (result) {
+		fprintf(stderr, "Warning: mad_decoder_run returned %d\n", result);
+	}
 
 	// Shut down decoder
 	mad_decoder_finish( &decoder );

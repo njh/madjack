@@ -257,7 +257,15 @@ void do_quit()
 
 void display_keyhelp()
 {
-	printf( "help message.\n" );
+	printf( "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION );
+	printf( "  h: This Screen\n" );
+	printf( "  p: Play/Pause Deck\n" );
+	printf( "  l: Load a Track\n" );
+	printf( "  e: Eject current track\n" );
+	printf( "  s: Stop Deck\n" );
+	printf( "  c: Cue Deck\n" );
+	printf( "  q: Quit MadJack\n" );
+	printf( "\n" );	
 }
 
 
