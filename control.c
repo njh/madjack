@@ -27,9 +27,11 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <termios.h>
+#include <ctype.h>
 
 #include "control.h"
 #include "madjack.h"
+#include "maddecode.h"
 #include "config.h"
 
 
@@ -74,42 +76,89 @@ set_input_mode (void)
 }
 
 
+
+
+
+
 // Start playing
 void do_play()
 {
 	printf("do_play()\n");
 	
-	if (get_state() == MADJACK_STATE_STOPPED) {
+	if (get_state() == MADJACK_STATE_PAUSED ||
+	    get_state() == MADJACK_STATE_READY)
+	{
+		set_state( MADJACK_STATE_PLAYING );
 		
+	} else if (get_state() == MADJACK_STATE_STOPPED) {
+	
+		// Re-cue up the the track
+		do_cue();
+		
+		// Wait until track is loaded
+		while ( get_state() == MADJACK_STATE_LOADING ) {
+			printf("Waiting for decoder thread to load.\n");
+			usleep( 5000 );
+		}
+		
+		set_state( MADJACK_STATE_PLAYING );
+		
+	} else {
+		printf( "Can't change to PLAYING from state %d.\n", get_state() );
 	}
-
-	set_state( MADJACK_STATE_PLAYING );
 }
 
 
-// Prepare 
+// Prepare deck to go into 'READY' state
 void do_cue()
 {
 	printf("do_cue()\n");
-	set_state( MADJACK_STATE_LOADING );
+	
+	if (get_state() == MADJACK_STATE_PLAYING ||
+	    get_state() == MADJACK_STATE_PAUSED ||
+	    get_state() == MADJACK_STATE_STOPPED )
+	{
 
-	// Open the new file
-	input_file->filepath = filepath;
-	input_file->file = fopen( input->filepath, "r" );
-	if (input_file->file==NULL) {
-		perror("Failed to open input file");
-		return;
+		// Change to stopped	
+		set_state( MADJACK_STATE_STOPPED );
+
+
+		// Wait for the old thread to stop
+		while( is_decoding ) {
+			printf("Waiting for old thread to stop.\n");
+			usleep( 5000 );
+		}
+	
+		// Seek to start of file
+		// FIXME: seek to after ID3 tags
+		fseek( input_file->file, 0, SEEK_SET);
+		
+		// Set the decoder running
+		set_state( MADJACK_STATE_LOADING );
+		start_decoder_thread( input_file );
+		
+	}
+	else if (get_state() != MADJACK_STATE_READY)
+	{
+	
+		printf( "Can't change to READY from state %d.\n", get_state() );
+		
 	}
 	
-	// Set the decoder running
-	start_decoder_thread( input_file );
 }
 
 void do_pause()
 {
 	printf("do_pause()\n");
-	set_state( MADJACK_STATE_PAUSED );
-
+	
+	if (get_state() == MADJACK_STATE_PLAYING )
+	{
+		set_state( MADJACK_STATE_PAUSED );
+	}
+	else if (get_state() != MADJACK_STATE_PAUSED)
+	{
+		printf( "Can't change to PAUSED from state %d.\n", get_state() );
+	}
 }
 
 
@@ -118,49 +167,123 @@ void do_stop()
 	printf("do_stop()\n");
 	set_state( MADJACK_STATE_STOPPED );
 
+	if (get_state() == MADJACK_STATE_PLAYING ||
+	    get_state() == MADJACK_STATE_PAUSED ||
+	    get_state() == MADJACK_STATE_READY )
+	{
+		set_state( MADJACK_STATE_STOPPED );
+	}
+	else if (get_state() != MADJACK_STATE_STOPPED)
+	{
+		printf( "Can't change to STOPPED from state %d.\n", get_state() );
+	}
 
 }
 
 void do_eject()
 {
 	printf("do_eject()\n");
-	set_state( MADJACK_STATE_EMPTY );
 
+	if (get_state() == MADJACK_STATE_PLAYING ||
+	    get_state() == MADJACK_STATE_PAUSED ||
+	    get_state() == MADJACK_STATE_READY ||
+	    get_state() == MADJACK_STATE_STOPPED )
+	{
+		// Stop first
+		if (get_state() != MADJACK_STATE_STOPPED )
+			set_state( MADJACK_STATE_STOPPED );
+	
+		// Wait for decoder to finish
+		while( is_decoding ) {
+			printf("Waiting for decoder to stop.\n");
+			usleep( 5000 );
+		}
 
+		// Close the input file
+		if (input_file->file) {
+			fclose(input_file->file);
+			input_file->file = NULL;
+			input_file->filepath = NULL;
+		}
+
+		// Deck is now empty
+		set_state( MADJACK_STATE_EMPTY );
+	}
+	else if (get_state() != MADJACK_STATE_EMPTY)
+	{
+		printf( "Can't change to EMPTY from state %d.\n", get_state() );
+	}
+	
 }
 
 void do_load( char* name )
 {
 	printf("do_load(%s)\n", name);
 	
-	// Eject the previous file ?
-	if (input->file) {
-		fclose(input->file);
-		input->file = NULL;
+	// Can only load if Deck is empty
+	if (get_state() != MADJACK_STATE_EMPTY )
+	{
+		do_eject();
 	}
 	
-	// Change state to loading
-	set_state( MADJACK_STATE_LOADING );
 	
-	// Open the new file
-	input->filepath = filepath;
-
-	// Cue up the file	
-	do_cue();
+	// Check it really is empty
+	if (get_state() == MADJACK_STATE_EMPTY )
+	{
+		// Open the new file
+		input_file->filepath = name;
+		input_file->file = fopen( input_file->filepath, "r" );
+		if (input_file->file==NULL) {
+			perror("Failed to open input file");
+			return;
+		}
+		
+		// We are now effectively in the 'STOPPED' state
+		set_state( MADJACK_STATE_STOPPED );
+		
+		// Cue up the new file	
+		do_cue();
+	}
 }
+
 
 void do_quit()
 {
 	printf("do_quit()\n");
 	set_state( MADJACK_STATE_QUIT );
-
 }
 
 
 
+void display_keyhelp()
+{
+	printf( "help message.\n" );
+}
+
+
+char* read_filename()
+{
+	char *filename = malloc(255);
+	int i;
+	
+	reset_input_mode();
+
+	printf("Enter name of file to load: ");
+	fgets( filename, 254, stdin );
+	for(i=0; i<254; i++) {
+		if (filename[i]==10 || filename[i]==13) {
+			filename[i]=0;
+		}
+	}
+
+	set_input_mode( );
+	
+	return filename;
+}
+
+
 void handle_keypresses()
 {
-
 	// Turn off input buffering on STDIN
 	set_input_mode( );
 	
@@ -168,7 +291,7 @@ void handle_keypresses()
 	while (get_state() != MADJACK_STATE_QUIT) {
 
 		// Get keypress
-		int c = fgetc( stdin );
+		int c = tolower( fgetc( stdin ) );
 		switch(c) {
 			case 'p': 
 				if (get_state() == MADJACK_STATE_PLAYING) {
@@ -177,9 +300,15 @@ void handle_keypresses()
 					do_play();
 				}
 			break;
-			case 'l':
-				printf("Enter name of file to load:");
-			break;
+			
+			case 'l': {
+				char* filename = read_filename();
+				do_load( filename );
+				free( filename );
+				break;
+			}
+
+			case 'c': do_cue(); break;
 			case 'e': do_eject(); break;
 			case 's': do_stop(); break;
 			case 'q': do_quit(); break;
@@ -189,7 +318,12 @@ void handle_keypresses()
 				printf( "Unknown command '%c'.\n", (char)c );
 			case 'h':
 			case '?':
-				printf( "help message.\n" );
+				display_keyhelp();
+			break;
+			
+			// Ignore return
+			case 13:
+			case 10:
 			break;
 		}
 	}

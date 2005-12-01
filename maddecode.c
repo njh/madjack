@@ -28,6 +28,7 @@
 #include <unistd.h>
 
 #include <mad.h>
+#include <pthread.h>
 #include <jack/ringbuffer.h>
 
 #include "madjack.h"
@@ -99,8 +100,10 @@ enum mad_flow callback_output(void *data,
 	nsamples  = pcm->length;
 	left_ch   = pcm->samples[0];
 	right_ch  = pcm->samples[1];
+
 	
-	// Update state
+	// If we have decoded a frame, then we have gone from
+	//   Loading to Ready
 	if (get_state()==MADJACK_STATE_LOADING) {
 		set_state( MADJACK_STATE_READY );
 	}
@@ -109,15 +112,15 @@ enum mad_flow callback_output(void *data,
 	while( jack_ringbuffer_write_space( ringbuffer[0] )
 	          < (nsamples * sizeof(float) ) )
 	{
+	
+		// Check state and possibly abort
 		if (get_state() == MADJACK_STATE_LOADING || 
 			get_state() == MADJACK_STATE_STOPPED ||
 			get_state() == MADJACK_STATE_EMPTY ||
-			get_state() == MADJACK_STATE_QUIT) return MAD_FLOW_BREAK;
+			get_state() == MADJACK_STATE_QUIT)
+		return MAD_FLOW_STOP;
 
-		//printf("Sleeping while there isn't enough room in ring buffer.\n");
-
-		// Sleep for a quarter of the total ring buffer length
-		usleep((RINGBUFFER_DURATION/4)*1000000);
+		usleep(1000);
 	}
 
 
@@ -216,6 +219,10 @@ void *thread_decode_mad(void *input)
 
 	printf("Decoder thread exiting.\n");
 
+	// If we got here while loading, we must be stopped
+	if (get_state() == MADJACK_STATE_LOADING )
+		set_state( MADJACK_STATE_STOPPED );
+
 	is_decoding = 0;
 	
 	pthread_exit(NULL);
@@ -223,12 +230,19 @@ void *thread_decode_mad(void *input)
 
 
 
-void start_decoder_thread(void *input)
+void start_decoder_thread(void *data)
 {
+	input_file_t *input = data;
 	int result; 
 	
-	printf("Starting decoder thread.\n");
-
+	// Empty out the read buffer
+	input->buffer_used = 0;
+	
+	// Empty out ringbuffers
+	jack_ringbuffer_reset( ringbuffer[0] );
+	jack_ringbuffer_reset( ringbuffer[1] );
+	
+	// Start the decoder thread
 	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
 	if (result) {
 		printf("Error: return code from pthread_create() is %d\n", result);
@@ -241,8 +255,10 @@ void start_decoder_thread(void *input)
 void finish_decoder_thread()
 {
 
-	printf("Waiting for decoder thread to finish.\n");
-	pthread_join( decoder_thread, NULL);
+	while( is_decoding ) {
+		printf("Waiting for decoder thread to finish.\n");
+		sleep( 1 );
+	}
 
 }
 

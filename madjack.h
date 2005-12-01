@@ -34,17 +34,17 @@
 
 
 enum madjack_state {
-	MADJACK_STATE_PLAYING,		// Deck is playing
-	MADJACK_STATE_PAUSED,		// Deck is paused in mid-playback
-	MADJACK_STATE_READY,		// Deck is loaded and ready to play
-	MADJACK_STATE_LOADING,		// In process of loading deck
-	MADJACK_STATE_STOPPED,		// Deck is stopped (mid-track or at end)
-	MADJACK_STATE_EMPTY,		// No track is loaded in deck
-	MADJACK_STATE_QUIT			// Time to quit
+	MADJACK_STATE_PLAYING,		// 0: Deck is playing
+	MADJACK_STATE_PAUSED,		// 1: Deck is paused in mid-playback
+	MADJACK_STATE_READY,		// 2: Deck is loaded and ready to play
+	MADJACK_STATE_LOADING,		// 3: In process of loading deck
+	MADJACK_STATE_STOPPED,		// 4: Deck is stopped (mid-track or at end)
+	MADJACK_STATE_EMPTY,		// 5: No track is loaded in deck
+	MADJACK_STATE_QUIT			// 6: Time to quit
 };
 
 
-typedef struct {
+typedef struct input_file_struct {
 	unsigned char* buffer;
 	unsigned int buffer_size;
 	unsigned int buffer_used;

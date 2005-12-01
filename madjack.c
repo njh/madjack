@@ -26,7 +26,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <pthread.h>
 #include <termios.h>
 
 #include <lo/lo.h>
@@ -76,12 +75,13 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			// Not enough samples ?
 			if (len < to_read) {
 				if (is_decoding) {
-					fprintf(stderr, "ringbuffer underrun.\n");
-					usleep(1000);
+					fprintf(stderr, "warning: ringbuffer underrun.\n");
 				} else {
-					// Assume we have reached the end of the file
-					set_state( MADJACK_STATE_STOPPED );
+					// Must have reached end of file
 				}
+				
+				// Stop playback
+				set_state( MADJACK_STATE_STOPPED );
 			}
 		}
 		
@@ -232,7 +232,7 @@ void finish_inputfile(input_file_t* ptr)
 }
 
 
-enum madjack_state state get_state()
+enum madjack_state get_state()
 {
 	return state;
 }
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 
 
 	// Load a file (and start decoding)
-	load_inputfile( input_file, "003548.mp3" );
+	do_load( "003505.mp3" );
 
 
 
