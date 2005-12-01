@@ -190,8 +190,7 @@ void do_eject()
 	    get_state() == MADJACK_STATE_STOPPED )
 	{
 		// Stop first
-		if (get_state() != MADJACK_STATE_STOPPED )
-			set_state( MADJACK_STATE_STOPPED );
+		set_state( MADJACK_STATE_STOPPED );
 	
 		// Wait for decoder to finish
 		while( is_decoding ) {
