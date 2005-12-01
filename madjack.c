@@ -35,6 +35,7 @@
 
 
 #include "control.h"
+#include "mjlo.h"
 #include "madjack.h"
 #include "maddecode.h"
 #include "config.h"
@@ -48,6 +49,7 @@ jack_client_t *client = NULL;
 
 input_file_t *input_file = NULL;
 int state = MADJACK_STATE_EMPTY;
+char * root_directory = "";
 
 
 
@@ -100,28 +102,39 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 
 
 
+// crude way of automatically connecting up jack ports
+void autoconnect_jack_ports( jack_client_t* client )
+{
+	const char **all_ports;
+	unsigned int ch=0;
+	int err,i;
 
-/* Connect the chosen port to ours */
-//static void connect_port(jack_client_t *client, char *port_name)
-//{
-//	jack_port_t *port;
-//
-//	// Get the port we are connecting to
-//	port = jack_port_by_name(client, port_name);
-//	if (port == NULL) {
-///		fprintf(stderr, "Can't find port '%s'\n", port_name);
-//		exit(1);
-///	}
+	// Get a list of all the jack ports
+	all_ports = jack_get_ports(client, NULL, NULL, JackPortIsInput);
+	if (!all_ports) {
+		fprintf(stderr, "autoconnect_jack_ports(): jack_get_ports() returned NULL.");
+		exit(1);
+	}
+	
+	// Step through each port name
+	for (i = 0; all_ports[i]; ++i) {
 
-//	// Connect the port to our input port
-//	fprintf(stderr,"Connecting '%s' to '%s'...\n", jack_port_name(port), jack_port_name(input_port));
-//	if (jack_connect(client, jack_port_name(port), jack_port_name(input_port))) {
-//		fprintf(stderr, "Cannot connect port '%s' to '%s'\n", jack_port_name(port), jack_port_name(input_port));
-//		exit(1);
-//	}
-//}
-
-
+		const char* in = jack_port_name( outport[ch] );
+		const char* out = all_ports[i];
+		
+		fprintf(stderr, "Connecting %s to %s\n", in, out);
+		
+		if ((err = jack_connect(client, in, out)) != 0) {
+			fprintf(stderr, "autoconnect_jack_ports(): failed to jack_connect() ports: %d\n",err);
+			exit(1);
+		}
+	
+		// Found enough ports ?
+		if (++ch >= 2) break;
+	}
+	
+	free( all_ports );
+}
 
 
 static
@@ -224,6 +237,20 @@ void finish_inputfile(input_file_t* ptr)
 }
 
 
+const char* get_state_name( enum madjack_state state )
+{
+	switch( state ) {
+		case MADJACK_STATE_PLAYING: return "PLAYING";
+		case MADJACK_STATE_PAUSED: return "PAUSED";
+		case MADJACK_STATE_READY: return "READY";
+		case MADJACK_STATE_LOADING: return "LOADING";
+		case MADJACK_STATE_STOPPED: return "STOPPED";
+		case MADJACK_STATE_EMPTY: return "EMPTY";
+		case MADJACK_STATE_QUIT: return "QUIT";
+		default: return "UNKNOWN";
+	}
+}
+
 enum madjack_state get_state()
 {
 	return state;
@@ -232,8 +259,11 @@ enum madjack_state get_state()
 
 void set_state( enum madjack_state new_state )
 {
-	printf("State changing from %d to %d.\n", state, new_state);
-	state = new_state;
+	if (state != new_state) {
+		printf("State changing from '%s' to '%s'.\n",
+			get_state_name(state), get_state_name(new_state));
+		state = new_state;
+	}
 }
 
 
@@ -241,8 +271,11 @@ void set_state( enum madjack_state new_state )
 static
 void usage()
 {
-	fprintf(stderr, "%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
-	fprintf(stderr, "Usage: %s [<filename>]\n\n", PACKAGE_NAME);
+	printf("%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
+	printf("Usage: %s [options] [<filename>]\n\n", PACKAGE_NAME);
+	printf("  -a        Automatically connect JACK ports\n");
+	printf("  -d <dir>  Set root directory for audio files\n");
+	printf("  -p <port> Enable LibLO and set port\n");
 	exit(1);
 }
 
@@ -251,19 +284,26 @@ void usage()
 int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
+	char *port = NULL;
 	int opt;
 
 
 	// Parse Switches
-	while ((opt = getopt(argc, argv, "ahv")) != -1) {
+	while ((opt = getopt(argc, argv, "ad:p:hv")) != -1) {
 		switch (opt) {
 			case 'a':
-				// Autoconnect our output ports
 				autoconnect = 1;
+				break;
+				
+			case 'd':
+				root_directory = optarg;
+				break;
+		
+			case 'p':
+				port = optarg;
 				break;
 		
 			default:
-				// Show usage/version information
 				usage();
 				break;
 		}
@@ -295,7 +335,7 @@ int main(int argc, char *argv[])
 	
 	// Auto-connect our output ports ?
 	if (autoconnect) {
-		// *FIXME*
+		autoconnect_jack_ports( client );
 	}
 
 

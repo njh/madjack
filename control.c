@@ -44,6 +44,10 @@ struct termios saved_attributes;
 static void
 reset_input_mode (void)
 {
+	
+	// Make sure stdin is a terminal.
+	if (!isatty (STDIN_FILENO)) return;
+
 	tcsetattr (STDIN_FILENO, TCSANOW, &saved_attributes);
 }
 
@@ -54,11 +58,7 @@ set_input_mode (void)
 	struct termios tattr;
 	
 	// Make sure stdin is a terminal.
-	if (!isatty (STDIN_FILENO))
-	{
-		fprintf (stderr, "Not a terminal.\n");
-		exit (-1);
-	}
+	if (!isatty (STDIN_FILENO)) return;
 	
 	// Save the terminal attributes so we can restore them later.
 	if (tcgetattr(STDIN_FILENO, &saved_attributes) == -1) {
@@ -104,7 +104,7 @@ void do_play()
 		set_state( MADJACK_STATE_PLAYING );
 		
 	} else {
-		printf( "Can't change to PLAYING from state %d.\n", get_state() );
+		printf( "Can't change to PLAYING from state %s.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -141,7 +141,7 @@ void do_cue()
 	else if (get_state() != MADJACK_STATE_READY)
 	{
 	
-		printf( "Can't change to READY from state %d.\n", get_state() );
+		printf( "Can't change to READY from state %s.\n", get_state_name(get_state()) );
 		
 	}
 	
@@ -159,7 +159,7 @@ void do_pause()
 	}
 	else if (get_state() != MADJACK_STATE_PAUSED)
 	{
-		printf( "Can't change to PAUSED from state %d.\n", get_state() );
+		printf( "Can't change to PAUSED from state %s.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -178,7 +178,7 @@ void do_stop()
 	}
 	else if (get_state() != MADJACK_STATE_STOPPED)
 	{
-		printf( "Can't change to STOPPED from state %d.\n", get_state() );
+		printf( "Can't change to STOPPED from state %s.\n", get_state_name(get_state()) );
 	}
 
 }
@@ -215,7 +215,7 @@ void do_eject()
 	}
 	else if (get_state() != MADJACK_STATE_EMPTY)
 	{
-		printf( "Can't change to EMPTY from state %d.\n", get_state() );
+		printf( "Can't change to EMPTY from state %s.\n", get_state_name(get_state()) );
 	}
 	
 }

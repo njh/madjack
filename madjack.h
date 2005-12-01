@@ -31,6 +31,7 @@
 // ------- Constants -------
 #define RINGBUFFER_DURATION		(4.0)
 #define READ_BUFFER_SIZE		(2048)
+#define MAX_FILEPATH_LEN		(1024)
 
 
 enum madjack_state {
@@ -58,11 +59,12 @@ extern jack_port_t *outport[2];
 extern jack_ringbuffer_t *ringbuffer[2];
 extern jack_client_t *client;
 extern input_file_t *input_file;
-
+extern char * root_directory;
 
 // ------- Prototypes -------
 enum madjack_state get_state();
 void set_state( enum madjack_state new_state );
+const char* get_state_name( enum madjack_state state );
 
 
 #endif

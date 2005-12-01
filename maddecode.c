@@ -152,7 +152,7 @@ enum mad_flow callback_header(void *data,
 {
 	//printf("samplerate of file: %d\n", header->samplerate);
 	if (jack_get_sample_rate( client ) != header->samplerate) {
-		printf("Error: Sample rate of input file (%d) is different to JACKs (%d)\n",
+		printf("Error: Sample rate of input file (%d) is different to JACK's (%d)\n",
 				header->samplerate, jack_get_sample_rate( client ) );
 		
 		return MAD_FLOW_BREAK;
