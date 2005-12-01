@@ -9,6 +9,8 @@ In order of priority:
  
  - calculate duration of tracks
  
+ - seek to after ID3 headers when loading files
+ 
  - allow seeking to specific points
  
  - adjust playback speed
