@@ -129,11 +129,11 @@ enum mad_flow callback_output(void *data,
 		jack_default_audio_sample_t sample;
 
 		// Convert sample for left channel
-		sample = mad_f_tofloat(*left_ch++);
+		sample = mad_f_todouble(*left_ch++);
 		jack_ringbuffer_write( ringbuffer[0], (char*)&sample, sizeof(sample) );
 		
 		// Convert sample for right channel
-		if (pcm->channels == 2) sample = mad_f_tofloat(*right_ch++);
+		if (pcm->channels == 2) sample = mad_f_todouble(*right_ch++);
 		jack_ringbuffer_write( ringbuffer[1], (char*)&sample, sizeof(sample) );
 	}
 	

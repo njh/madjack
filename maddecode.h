@@ -34,13 +34,6 @@ extern int is_decoding;
 void start_decoder_thread(void *input);
 void finish_decoder_thread();
 
-
-#ifndef mad_f_tofloat
-#define mad_f_tofloat(x)	((float)  \
-				 ((x) / (float) (1L << MAD_F_FRACBITS)))
-#endif
-
-
 #endif
 
 
