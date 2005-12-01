@@ -1,8 +1,7 @@
+Installing MadJACK
+==================
 
-Installing Jack Meter
-=====================
-
-jack_meter uses the automake build system, so should
+MadJACK uses the automake build system, so should 
 work on any system supported by JACK. Quick Start:
 
  ./configure
@@ -11,9 +10,6 @@ work on any system supported by JACK. Quick Start:
 Then as root:
 
  make install
-
-
-Since version 0.3 of Jack Meter, it has required JACK version 0.100.0. 
 
 
 
