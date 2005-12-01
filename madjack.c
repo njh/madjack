@@ -88,7 +88,7 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			}
 			
 			// Increment the position in the track
-			position += ((float)nframes / jack_get_sample_rate( client ));
+			if (c==0) position += ((float)nframes / jack_get_sample_rate( client ));
 		}
 		
 		// If we don't have enough audio, fill it up with silence
