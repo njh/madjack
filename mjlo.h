@@ -20,6 +20,7 @@
 
 */
 
+#include "madjack.h"
 
 #ifndef _MADJACK_LO_H_
 #define _MADJACK_LO_H_
