@@ -25,6 +25,9 @@ It does not do the following:
  - Queue up multiple tracks
  - Have playlists
 
+In order to segue and cross-fade between tracks I have multiple 
+copies of MadJACK running.
+
 
 Terminal Interface
 ------------------

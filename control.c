@@ -269,7 +269,7 @@ void display_keyhelp()
 	printf( "  l: Load a Track\n" );
 	printf( "  e: Eject current track\n" );
 	printf( "  s: Stop Deck\n" );
-	printf( "  c: Cue Deck\n" );
+	printf( "  c: Cue deck to start of track\n" );
 	printf( "  q: Quit MadJack\n" );
 	printf( "\n" );	
 }

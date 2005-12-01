@@ -1,0 +1,18 @@
+MadJACK TODO List
+=================
+
+In order of priority:
+
+ - more accurate converting of MAD's fixed numbers to 32bit floats ?
+ 
+ - calculate duration of tracks
+ 
+ - allow seeking to specific points
+ 
+ - adjust playback speed
+
+
+
+Add support for other formats
+  (libsndfile, Ogg Vorbis, FLAC...)
+  
