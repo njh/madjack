@@ -122,19 +122,9 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 //}
 
 
-/* Display how to use this program */
+
+
 static
-int usage( const char * progname )
-{
-	fprintf(stderr, "madjack version %s\n\n", VERSION);
-	fprintf(stderr, "Usage %s [<filemame>]\n\n", progname);
-	exit(1);
-}
-
-
-
-
-
 void init_jack() 
 {
 	jack_status_t status;
@@ -178,6 +168,7 @@ void init_jack()
 }
 
 
+static
 void finish_jack()
 {
 	// Leave the Jack graph
@@ -189,6 +180,7 @@ void finish_jack()
 }
 
 
+static
 input_file_t* init_inputfile()
 {
 	input_file_t* ptr;
@@ -215,6 +207,7 @@ input_file_t* init_inputfile()
 }
 
 
+static
 void finish_inputfile(input_file_t* ptr)
 {
 	// File still open?
@@ -244,11 +237,24 @@ void set_state( enum madjack_state new_state )
 }
 
 
+// Display how to use this program
+static
+void usage()
+{
+	fprintf(stderr, "%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
+	fprintf(stderr, "Usage: %s [<filename>]\n\n", PACKAGE_NAME);
+	exit(1);
+}
+
+
+
 int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
 	int opt;
 
+
+	// Parse Switches
 	while ((opt = getopt(argc, argv, "ahv")) != -1) {
 		switch (opt) {
 			case 'a':
@@ -258,11 +264,20 @@ int main(int argc, char *argv[])
 		
 			default:
 				// Show usage/version information
-				usage( argv[0] );
+				usage();
 				break;
 		}
 	}
 
+
+	// Check remaining arguments
+    argc -= optind;
+    argv += optind;
+    if (argc>1) {
+    	printf("%s only takes a single, optional, filename argument.\n", PACKAGE_NAME);
+    	usage();
+	}
+    
 
 
 	// Initialise JACK
@@ -284,12 +299,11 @@ int main(int argc, char *argv[])
 	}
 
 
-	// Load a file (and start decoding)
-	do_load( "003505.mp3" );
+	// Load an initial track ?
+	if (argc) do_load( *argv );
 
 
-
-	// Handle user keypresses
+	// Handle user keypresses (main loop)
 	handle_keypresses();
 
 	
