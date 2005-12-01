@@ -196,7 +196,7 @@ void *thread_decode_mad(void *input)
 
 	is_decoding = 1;
 
-	printf("Decoder thread started.\n");
+	if (verbose) printf("Decoder thread started.\n");
 
 	// Initalise the MAD decoder
 	mad_decoder_init(
@@ -219,7 +219,7 @@ void *thread_decode_mad(void *input)
 	// Shut down decoder
 	mad_decoder_finish( &decoder );
 
-	printf("Decoder thread exiting.\n");
+	if (verbose) printf("Decoder thread exiting.\n");
 
 	// If we got here while loading, we must be stopped
 	if (get_state() == MADJACK_STATE_LOADING )
@@ -237,6 +237,9 @@ void start_decoder_thread(void *data)
 	input_file_t *input = data;
 	int result; 
 	
+	// Reset the position in track
+	position = 0.0;
+	
 	// Empty out the read buffer
 	input->buffer_used = 0;
 	
@@ -247,7 +250,7 @@ void start_decoder_thread(void *data)
 	// Start the decoder thread
 	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
 	if (result) {
-		printf("Error: return code from pthread_create() is %d\n", result);
+		fprintf(stderr, "Error: return code from pthread_create() is %d\n", result);
 		exit(-1);
 	}
 
@@ -258,7 +261,7 @@ void finish_decoder_thread()
 {
 
 	while( is_decoding ) {
-		printf("Waiting for decoder thread to finish.\n");
+		if (verbose) printf("Waiting for decoder thread to finish.\n");
 		sleep( 1 );
 	}
 

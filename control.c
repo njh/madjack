@@ -83,7 +83,7 @@ set_input_mode (void)
 // Start playing
 void do_play()
 {
-	printf("do_play()\n");
+	if (verbose) printf("do_play()\n");
 	
 	if (get_state() == MADJACK_STATE_PAUSED ||
 	    get_state() == MADJACK_STATE_READY)
@@ -97,14 +97,14 @@ void do_play()
 		
 		// Wait until track is loaded
 		while ( get_state() == MADJACK_STATE_LOADING ) {
-			printf("Waiting for decoder thread to load.\n");
+			if (verbose) printf("Waiting for decoder thread to load.\n");
 			usleep( 5000 );
 		}
 		
 		set_state( MADJACK_STATE_PLAYING );
 		
 	} else {
-		printf( "Can't change to PLAYING from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change to PLAYING from state %s.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -112,7 +112,7 @@ void do_play()
 // Prepare deck to go into 'READY' state
 void do_cue()
 {
-	printf("do_cue()\n");
+	if (verbose) printf("do_cue()\n");
 	
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED ||
@@ -125,7 +125,7 @@ void do_cue()
 
 		// Wait for the old thread to stop
 		while( is_decoding ) {
-			printf("Waiting for old thread to stop.\n");
+			if (verbose) printf("Waiting for old thread to stop.\n");
 			usleep( 5000 );
 		}
 	
@@ -141,7 +141,7 @@ void do_cue()
 	else if (get_state() != MADJACK_STATE_READY)
 	{
 	
-		printf( "Can't change to READY from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change to READY from state %s.\n", get_state_name(get_state()) );
 		
 	}
 	
@@ -151,7 +151,7 @@ void do_cue()
 // Pause Deck (if playing)
 void do_pause()
 {
-	printf("do_pause()\n");
+	if (verbose) printf("do_pause()\n");
 	
 	if (get_state() == MADJACK_STATE_PLAYING )
 	{
@@ -159,7 +159,7 @@ void do_pause()
 	}
 	else if (get_state() != MADJACK_STATE_PAUSED)
 	{
-		printf( "Can't change to PAUSED from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change to PAUSED from state %s.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -167,7 +167,7 @@ void do_pause()
 // Stop deck (and close down decoder)
 void do_stop()
 {
-	printf("do_stop()\n");
+	if (verbose) printf("do_stop()\n");
 	set_state( MADJACK_STATE_STOPPED );
 
 	if (get_state() == MADJACK_STATE_PLAYING ||
@@ -178,7 +178,7 @@ void do_stop()
 	}
 	else if (get_state() != MADJACK_STATE_STOPPED)
 	{
-		printf( "Can't change to STOPPED from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change to STOPPED from state %s.\n", get_state_name(get_state()) );
 	}
 
 }
@@ -187,7 +187,7 @@ void do_stop()
 // Eject track from Deck
 void do_eject()
 {
-	printf("do_eject()\n");
+	if (verbose) printf("do_eject()\n");
 
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED ||
@@ -199,7 +199,7 @@ void do_eject()
 	
 		// Wait for decoder to finish
 		while( is_decoding ) {
-			printf("Waiting for decoder to stop.\n");
+			if (verbose) printf("Waiting for decoder to stop.\n");
 			usleep( 5000 );
 		}
 
@@ -209,13 +209,16 @@ void do_eject()
 			input_file->file = NULL;
 			input_file->filepath = NULL;
 		}
+		
+		// Reset position
+		position = 0.0;
 
 		// Deck is now empty
 		set_state( MADJACK_STATE_EMPTY );
 	}
 	else if (get_state() != MADJACK_STATE_EMPTY)
 	{
-		printf( "Can't change to EMPTY from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change to EMPTY from state %s.\n", get_state_name(get_state()) );
 	}
 	
 }
@@ -224,7 +227,7 @@ void do_eject()
 // Load Track into Deck
 void do_load( char* name )
 {
-	printf("do_load(%s)\n", name);
+	if (verbose) printf("do_load(%s)\n", name);
 	
 	// Can only load if Deck is empty
 	if (get_state() != MADJACK_STATE_EMPTY )
@@ -236,6 +239,8 @@ void do_load( char* name )
 	// Check it really is empty
 	if (get_state() == MADJACK_STATE_EMPTY )
 	{
+		if (!quiet) printf("Loading: %s\n", name);
+
 		// Open the new file
 		input_file->filepath = name;
 		input_file->file = fopen( input_file->filepath, "r" );
@@ -250,12 +255,13 @@ void do_load( char* name )
 		// Cue up the new file	
 		do_cue();
 	}
+	
 }
 
 // Quit MadJack
 void do_quit()
 {
-	printf("do_quit()\n");
+	if (verbose) printf("do_quit()\n");
 	set_state( MADJACK_STATE_QUIT );
 }
 
@@ -326,7 +332,7 @@ void handle_keypresses()
 			case 'e': do_eject(); break;
 			case 's': do_stop(); break;
 			case 'q': do_quit(); break;
-			
+			case 'z': printf("position: %f\n", position); break;
 			
 			default:
 				printf( "Unknown command '%c'.\n", (char)c );

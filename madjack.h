@@ -32,6 +32,7 @@
 #define RINGBUFFER_DURATION		(4.0)
 #define READ_BUFFER_SIZE		(2048)
 #define MAX_FILEPATH_LEN		(1024)
+#define DEFAULT_CLIENT_NAME		"madjack"
 
 
 enum madjack_state {
@@ -55,11 +56,16 @@ typedef struct input_file_struct {
 } input_file_t;
 
 
+// ------- Globals -------
 extern jack_port_t *outport[2];
 extern jack_ringbuffer_t *ringbuffer[2];
 extern jack_client_t *client;
 extern input_file_t *input_file;
 extern char * root_directory;
+extern int verbose;
+extern int quiet;
+extern float position;
+
 
 // ------- Prototypes -------
 enum madjack_state get_state();

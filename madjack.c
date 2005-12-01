@@ -47,10 +47,12 @@ jack_port_t *outport[2] = {NULL, NULL};
 jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
 jack_client_t *client = NULL;
 
-input_file_t *input_file = NULL;
-int state = MADJACK_STATE_EMPTY;
-char * root_directory = "";
-
+input_file_t *input_file = NULL;	// Input file info structure
+int state = MADJACK_STATE_EMPTY;	// State of MadJACK
+char * root_directory = "";			// Root directory (files loaded relative to this)
+float position = 0.0;				// Position in track in seconds
+int verbose = 0;					// Verbose flag (display more information)
+int quiet = 0;						// Quiet flag (stay silent unless error)
 
 
 
@@ -84,6 +86,9 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 				// Stop playback
 				set_state( MADJACK_STATE_STOPPED );
 			}
+			
+			// Increment the position in the track
+			position += ((float)nframes / jack_get_sample_rate( client ));
 		}
 		
 		// If we don't have enough audio, fill it up with silence
@@ -122,7 +127,7 @@ void autoconnect_jack_ports( jack_client_t* client )
 		const char* in = jack_port_name( outport[ch] );
 		const char* out = all_ports[i];
 		
-		fprintf(stderr, "Connecting %s to %s\n", in, out);
+		if (!quiet) printf("Connecting %s to %s\n", in, out);
 		
 		if ((err = jack_connect(client, in, out)) != 0) {
 			fprintf(stderr, "autoconnect_jack_ports(): failed to jack_connect() ports: %d\n",err);
@@ -138,18 +143,18 @@ void autoconnect_jack_ports( jack_client_t* client )
 
 
 static
-void init_jack() 
+void init_jack( const char* client_name ) 
 {
 	jack_status_t status;
 	size_t ringbuffer_size = 0;
 	int i;
 
 	// Register with Jack
-	if ((client = jack_client_open("madjack", JackNullOption, &status)) == 0) {
+	if ((client = jack_client_open(client_name, JackNullOption, &status)) == 0) {
 		fprintf(stderr, "Failed to start jack client: %d\n", status);
 		exit(1);
 	}
-	fprintf(stderr,"Registering as '%s'.\n", jack_get_client_name( client ) );
+	if (!quiet) printf("JACK client registered as '%s'.\n", jack_get_client_name( client ) );
 
 
 	// Create our output ports
@@ -166,7 +171,7 @@ void init_jack()
 	
 	// Create ring buffers
 	ringbuffer_size = jack_get_sample_rate( client ) * RINGBUFFER_DURATION * sizeof(float);
-	fprintf(stderr,"Size of the ring buffers is %2.2f seconds (%d bytes).\n", RINGBUFFER_DURATION, (int)ringbuffer_size );
+	if (verbose) printf("Size of the ring buffers is %2.2f seconds (%d bytes).\n", RINGBUFFER_DURATION, (int)ringbuffer_size );
 	for(i=0; i<2; i++) {
 		if (!(ringbuffer[i] = jack_ringbuffer_create( ringbuffer_size ))) {
 			fprintf(stderr, "Cannot create ringbuffer.\n");
@@ -260,8 +265,12 @@ enum madjack_state get_state()
 void set_state( enum madjack_state new_state )
 {
 	if (state != new_state) {
-		printf("State changing from '%s' to '%s'.\n",
-			get_state_name(state), get_state_name(new_state));
+		if (verbose) {
+			printf("State changing from '%s' to '%s'.\n",
+				get_state_name(state), get_state_name(new_state));
+		} else if (!quiet) {
+			printf("State: %s\n",get_state_name(new_state));
+		}
 		state = new_state;
 	}
 }
@@ -272,10 +281,15 @@ static
 void usage()
 {
 	printf("%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
-	printf("Usage: %s [options] [<filename>]\n\n", PACKAGE_NAME);
-	printf("  -a        Automatically connect JACK ports\n");
-	printf("  -d <dir>  Set root directory for audio files\n");
-	printf("  -p <port> Enable LibLO and set port\n");
+	printf("Usage: %s [options] [<filename>]\n", PACKAGE_NAME);
+	printf("   -a                Automatically connect JACK ports\n");
+	printf("   -j <left,right>   Connect our output ports to these inputs\n");
+	printf("   -n <name>         Name for this JACK client\n");
+	printf("   -p <port>         Enable LibLO and set port\n");
+	printf("   -d <dir>          Set root directory for audio files\n");
+	printf("   -v                Enable verbose mode\n");
+	printf("   -q                Enable quiet mode\n");
+	printf("\n");
 	exit(1);
 }
 
@@ -284,12 +298,13 @@ void usage()
 int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
+	char *client_name = DEFAULT_CLIENT_NAME;
 	char *port = NULL;
 	int opt;
 
 
 	// Parse Switches
-	while ((opt = getopt(argc, argv, "ad:p:hv")) != -1) {
+	while ((opt = getopt(argc, argv, "an:d:p:vqh")) != -1) {
 		switch (opt) {
 			case 'a':
 				autoconnect = 1;
@@ -302,11 +317,29 @@ int main(int argc, char *argv[])
 			case 'p':
 				port = optarg;
 				break;
+				
+			case 'n':
+				client_name = optarg;
+				break;
+				
+			case 'v':
+				verbose = 1;
+				break;
+				
+			case 'q':
+				quiet = 1;
+				break;
 		
 			default:
 				usage();
 				break;
 		}
+	}
+	
+	// Validate parameters
+	if (quiet && verbose) {
+    	printf("Can't be quiet and verbose at the same time.\n");
+    	usage();
 	}
 
 
@@ -321,7 +354,7 @@ int main(int argc, char *argv[])
 
 
 	// Initialise JACK
-	init_jack();
+	init_jack( client_name );
 
 	// Initialse Input File Data Structure
 	input_file = init_inputfile();
