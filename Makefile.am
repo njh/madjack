@@ -11,3 +11,5 @@ madjack_SOURCES = \
 	maddecode.h \
 	madjack.c \
 	madjack.h
+	
+EXTRA_DIST = autogen.sh TODO
