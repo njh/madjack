@@ -129,9 +129,8 @@ void do_cue()
 			usleep( 5000 );
 		}
 	
-		// Seek to start of file
-		// FIXME: seek to after ID3 tags
-		fseek( input_file->file, 0, SEEK_SET);
+		// Seek to start of file (after ID3 tag)
+		seek_start_mpeg_audio( input_file->file );
 		
 		// Set the decoder running
 		set_state( MADJACK_STATE_LOADING );

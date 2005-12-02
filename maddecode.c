@@ -158,6 +158,7 @@ enum mad_flow callback_header(void *data,
 		return MAD_FLOW_BREAK;
 	}
 	
+	// Header looks OK
 	return MAD_FLOW_CONTINUE;
 }
 
@@ -175,14 +176,32 @@ enum mad_flow callback_error(void *data,
 		    struct mad_stream *stream,
 		    struct mad_frame *frame)
 {
-	//input_file_t *input = data;
+
+	switch( stream->error ) {
+
+		// Warnings
+		case MAD_ERROR_LOSTSYNC:
+		case MAD_ERROR_BADCRC:
+		case MAD_ERROR_BADDATAPTR:
+			if (verbose)
+				fprintf(stderr, "Warning: libmad decoding error: 0x%04x (%s)\n",
+					stream->error, mad_stream_errorstr(stream));
+		return MAD_FLOW_CONTINUE;
+		
+		
+		// Errors
+		default:
+			fprintf(stderr, "Error: libmad decoding error: 0x%04x (%s)\n",
+				stream->error, mad_stream_errorstr(stream));
+		break;	
+	}
 	
-	fprintf(stderr, "Decoding error 0x%04x (%s)\n",
-		stream->error, mad_stream_errorstr(stream));
 	
-	/* return MAD_FLOW_BREAK here to stop decoding (and propagate an error) */
-	
-	return MAD_FLOW_CONTINUE;
+	// Abort decoding if error is non-recoverable
+	if (MAD_RECOVERABLE (stream->error))
+		 return MAD_FLOW_CONTINUE;
+	else return MAD_FLOW_BREAK;
+
 }
 
 
@@ -266,4 +285,55 @@ void finish_decoder_thread()
 	}
 
 }
+
+
+
+// Seek to the start of the MPEG audio in the file
+void seek_start_mpeg_audio( FILE* file )
+{
+	char bytes[ID3v2_HEADER_LEN];
+
+	// Seek to very start of file
+	fseek( file, 0, SEEK_SET);
+	
+	
+	// Read in (possible) ID3v2 header
+	bzero( bytes, ID3v2_HEADER_LEN );
+	fread( bytes, ID3v2_HEADER_LEN, 1, file);
+	
+	
+	// Is there an ID3v2 header there ?
+	if (bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3') {
+		unsigned int length = 0;
+		int ver_major = bytes[3];
+		int ver_minor = bytes[4];
+	
+		// Calculate the length of the extended header
+		length = (length << 7) | (bytes[6] & 0x7f);
+		length = (length << 7) | (bytes[7] & 0x7f);
+		length = (length << 7) | (bytes[8] & 0x7f);
+		length = (length << 7) | (bytes[9] & 0x7f);
+		
+		// Add on the header length
+		length += ID3v2_HEADER_LEN;
+		
+		// Check flag to see if footer is present
+		if (bytes[6] & 0x10)
+			length += ID3v2_FOOTER_LEN;
+		
+		if (verbose) printf("Found ID3 v2.%d.%d header at start of file (0x%x bytes).\n",
+				ver_major, ver_minor, length);
+
+		// Seek to end of ID3 headers
+		fseek( file, length, SEEK_SET);
+		
+	} else {
+		if (verbose) printf("No ID3v2 header found at start of file.\n");
+
+		// Just seek back to the start
+		fseek( file, 0, SEEK_SET);
+	}
+
+}
+
 

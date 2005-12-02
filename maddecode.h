@@ -26,6 +26,11 @@
 #define _MADDECODE_H_
 
 
+// Constants
+#define ID3v2_HEADER_LEN	(10)
+#define ID3v2_FOOTER_LEN	(10)
+
+
 // Gobals
 extern int is_decoding;
 
@@ -33,6 +38,7 @@ extern int is_decoding;
 // Prototypes
 void start_decoder_thread(void *input);
 void finish_decoder_thread();
+void seek_start_mpeg_audio( FILE* file );
 
 #endif
 
