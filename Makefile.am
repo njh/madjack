@@ -15,6 +15,6 @@ madjack_SOURCES = \
 	madjack.h
 	
 madjack_remote_SOURCES = \
-	madjack_remote.c
+	madjack-remote.c
 	
 EXTRA_DIST = autogen.sh TODO
