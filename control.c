@@ -89,9 +89,9 @@ void do_play()
 	    get_state() == MADJACK_STATE_READY)
 	{
 		set_state( MADJACK_STATE_PLAYING );
-		
-	} else if (get_state() == MADJACK_STATE_STOPPED) {
-	
+	}
+	else if (get_state() == MADJACK_STATE_STOPPED)
+	{
 		// Re-cue up the the track
 		do_cue();
 		
@@ -102,8 +102,9 @@ void do_play()
 		}
 		
 		set_state( MADJACK_STATE_PLAYING );
-		
-	} else {
+	}
+	else if (get_state() != MADJACK_STATE_PLAYING)
+	{
 		fprintf(stderr, "Warning: Can't change to PLAYING from state %s.\n", get_state_name(get_state()) );
 	}
 }
@@ -136,11 +137,8 @@ void do_cue()
 	}
 	else if (get_state() != MADJACK_STATE_READY)
 	{
-	
 		fprintf(stderr, "Warning: Can't change to READY from state %s.\n", get_state_name(get_state()) );
-		
 	}
-	
 }
 
 
