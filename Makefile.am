@@ -16,8 +16,7 @@ madjack_SOURCES = \
 
 madjack_remote_CFLAGS = -Wall @LIBLO_CFLAGS@
 madjack_remote_LDFLAGS = @LIBLO_LIBS@
-madjack_remote_SOURCES = \
-	madjack-remote.c
+madjack_remote_SOURCES = madjack-remote.c
 
 	
 EXTRA_DIST = autogen.sh TODO
