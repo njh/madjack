@@ -242,6 +242,22 @@ void finish_inputfile(input_file_t* ptr)
 }
 
 
+static void
+termination_handler (int signum)
+{
+	switch(signum) {
+		case SIGHUP:	fprintf(stderr, "Got hangup signal.\n"); break;
+		case SIGTERM:	fprintf(stderr, "Got termination signal.\n"); break;
+		case SIGINT:	fprintf(stderr, "Got interupt signal.\n"); break;
+	}
+	
+	// Set state to Quit
+	set_state( MADJACK_STATE_QUIT );
+	
+	signal(signum, termination_handler);
+}
+
+
 const char* get_state_name( enum madjack_state state )
 {
 	switch( state ) {
@@ -358,19 +374,21 @@ int main(int argc, char *argv[])
 
 	// Initialse Input File Data Structure
 	input_file = init_inputfile();
-	
-	
+
 	// Activate JACK
 	if (jack_activate(client)) {
 		fprintf(stderr, "Cannot activate JACK client.\n");
 		exit(1);
 	}
 	
+	// Setup signal handlers
+	signal(SIGTERM, termination_handler);
+	signal(SIGINT, termination_handler);
+	signal(SIGHUP, termination_handler);
+	
+	
 	// Auto-connect our output ports ?
-	if (autoconnect) {
-		autoconnect_jack_ports( client );
-	}
-
+	if (autoconnect) autoconnect_jack_ports( client );
 
 	// Load an initial track ?
 	if (argc) do_load( *argv );

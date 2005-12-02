@@ -3,13 +3,9 @@ MadJACK TODO List
 
 In order of priority:
 
- - handle Interupt/Terminate signals
- 
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
  - calculate duration of tracks
- 
- - seek to after ID3 headers when loading files
  
  - allow seeking to specific points
  

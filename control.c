@@ -45,7 +45,7 @@ static void
 reset_input_mode (void)
 {
 	
-	// Make sure stdin is a terminal.
+	// Make sure stdin is a terminal
 	if (!isatty (STDIN_FILENO)) return;
 
 	tcsetattr (STDIN_FILENO, TCSANOW, &saved_attributes);
@@ -57,17 +57,17 @@ set_input_mode (void)
 {
 	struct termios tattr;
 	
-	// Make sure stdin is a terminal.
-	if (!isatty (STDIN_FILENO)) return;
+	// Make sure stdin is a terminal
+	if (!isatty(STDIN_FILENO)) return;
 	
-	// Save the terminal attributes so we can restore them later.
+	// Save the terminal attributes so we can restore them later
 	if (tcgetattr(STDIN_FILENO, &saved_attributes) == -1) {
 		perror("failed to get termios settings");
 		exit(-1);
 	}
 	atexit (reset_input_mode);
 	
-	// Set the funny terminal modes.
+	// Set the funky terminal modes.
 	tcgetattr (STDIN_FILENO, &tattr);
 	tattr.c_lflag &= ~(ICANON|ECHO); // Clear ICANON and ECHO.
 	tattr.c_cc[VMIN] = 1;
@@ -300,47 +300,79 @@ char* read_filename()
 
 void handle_keypresses()
 {
+	struct timeval timeout;
+	fd_set readfds;
+	int retval = -1;
+
+	// Make STDOUT unbuffered (if it is a terminal)
+	if (isatty(STDOUT_FILENO))
+		setbuf(stdout, NULL);
+
+	// Set timeout to 1/20 second
+	timeout.tv_sec = 0;
+	timeout.tv_usec = 50000;
+
 	// Turn off input buffering on STDIN
 	set_input_mode( );
 	
 	// Check for keypresses
 	while (get_state() != MADJACK_STATE_QUIT) {
 
-		// Get keypress
-		int c = tolower( fgetc( stdin ) );
-		switch(c) {
-			case 'p': 
-				if (get_state() == MADJACK_STATE_PLAYING) {
-					do_pause();
-				} else {
-					do_play();
-				}
-			break;
+		// Display position
+		if (!quiet && isatty(STDOUT_FILENO))
+			printf("[%2.2f]\r", position);
+
+		// Watch socket to see when it has input.
+		FD_ZERO(&readfds);
+		FD_SET(STDIN_FILENO, &readfds);
+		retval = select(FD_SETSIZE, &readfds, NULL, NULL, &timeout);
+
+		// Check return value 
+		if (retval < 0) {
+			// Something went wrong
+			if (verbose) perror("select()");
+			return;
 			
-			case 'l': {
-				char* filename = read_filename();
-				do_load( filename );
-				free( filename );
+		} else if (retval > 0) {
+
+			// Get keypress
+			int c = tolower( fgetc( stdin ) );
+			switch(c) {
+			
+				// Pause/Play
+				case 'p': 
+					if (get_state() == MADJACK_STATE_PLAYING) {
+						do_pause();
+					} else {
+						do_play();
+					}
+				break;
+				
+				// Load
+				case 'l': {
+					char* filename = read_filename();
+					do_load( filename );
+					free( filename );
+					break;
+				}
+	
+				case 'c': do_cue(); break;
+				case 'e': do_eject(); break;
+				case 's': do_stop(); break;
+				case 'q': do_quit(); break;
+				
+				default:
+					printf( "Unknown command '%c'.\n", (char)c );
+				case 'h':
+				case '?':
+					display_keyhelp();
+				break;
+				
+				// Ignore return and enter
+				case 13:
+				case 10:
 				break;
 			}
-
-			case 'c': do_cue(); break;
-			case 'e': do_eject(); break;
-			case 's': do_stop(); break;
-			case 'q': do_quit(); break;
-			case 'z': printf("position: %f\n", position); break;
-			
-			default:
-				printf( "Unknown command '%c'.\n", (char)c );
-			case 'h':
-			case '?':
-				display_keyhelp();
-			break;
-			
-			// Ignore return
-			case 13:
-			case 10:
-			break;
 		}
 	}
 
