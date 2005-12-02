@@ -38,7 +38,6 @@ extern int is_decoding;
 // Prototypes
 void start_decoder_thread(void *input);
 void finish_decoder_thread();
-void seek_start_mpeg_audio( FILE* file );
 
 #endif
 

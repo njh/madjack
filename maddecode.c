@@ -251,45 +251,8 @@ void *thread_decode_mad(void *input)
 
 
 
-void start_decoder_thread(void *data)
-{
-	input_file_t *input = data;
-	int result; 
-	
-	// Reset the position in track
-	position = 0.0;
-	
-	// Empty out the read buffer
-	input->buffer_used = 0;
-	
-	// Empty out ringbuffers
-	jack_ringbuffer_reset( ringbuffer[0] );
-	jack_ringbuffer_reset( ringbuffer[1] );
-	
-	// Start the decoder thread
-	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
-	if (result) {
-		fprintf(stderr, "Error: return code from pthread_create() is %d\n", result);
-		exit(-1);
-	}
-
-}
-
-
-void finish_decoder_thread()
-{
-
-	while( is_decoding ) {
-		if (verbose) printf("Waiting for decoder thread to finish.\n");
-		sleep( 1 );
-	}
-
-}
-
-
-
 // Seek to the start of the MPEG audio in the file
-void seek_start_mpeg_audio( FILE* file )
+static void seek_start_mpeg_audio( FILE* file )
 {
 	char bytes[ID3v2_HEADER_LEN];
 
@@ -335,5 +298,48 @@ void seek_start_mpeg_audio( FILE* file )
 	}
 
 }
+
+
+
+
+void start_decoder_thread(void *data)
+{
+	input_file_t *input = data;
+	int result; 
+	
+	// Reset the position in track
+	position = 0.0;
+	
+	// Empty out the read buffer
+	input->buffer_used = 0;
+	
+	// Empty out ringbuffers
+	jack_ringbuffer_reset( ringbuffer[0] );
+	jack_ringbuffer_reset( ringbuffer[1] );
+	
+	// Seek to start of file (after ID3 tag)
+	seek_start_mpeg_audio( input_file->file );
+
+		
+	// Start the decoder thread
+	result = pthread_create(&decoder_thread, NULL, thread_decode_mad, input);
+	if (result) {
+		fprintf(stderr, "Error: return code from pthread_create() is %d\n", result);
+		exit(-1);
+	}
+
+}
+
+
+void finish_decoder_thread()
+{
+
+	while( is_decoding ) {
+		if (verbose) printf("Waiting for decoder thread to finish.\n");
+		sleep( 1 );
+	}
+
+}
+
 
 

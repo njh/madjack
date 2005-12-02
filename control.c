@@ -129,9 +129,6 @@ void do_cue()
 			usleep( 5000 );
 		}
 	
-		// Seek to start of file (after ID3 tag)
-		seek_start_mpeg_audio( input_file->file );
-		
 		// Set the decoder running
 		set_state( MADJACK_STATE_LOADING );
 		start_decoder_thread( input_file );
