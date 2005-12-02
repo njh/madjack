@@ -26,9 +26,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <termios.h>
 
-#include <lo/lo.h>
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <getopt.h>
@@ -315,6 +313,7 @@ int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
 	char *client_name = DEFAULT_CLIENT_NAME;
+	lo_server_thread osc_thread = NULL;
 	char *port = NULL;
 	int opt;
 
@@ -367,7 +366,8 @@ int main(int argc, char *argv[])
     	usage();
 	}
     
-
+	// Initialise LibLO
+	if (port) osc_thread = init_liblo( port );
 
 	// Initialise JACK
 	init_jack( client_name );
@@ -398,9 +398,11 @@ int main(int argc, char *argv[])
 	handle_keypresses();
 
 	
+	// Shut down LibLO
+	if (osc_thread) finish_liblo( osc_thread );
+
 	// Wait for decoder thread to terminate
 	finish_decoder_thread();
-	
 	
 	// Clean up JACK
 	finish_jack();

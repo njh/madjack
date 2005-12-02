@@ -20,14 +20,15 @@
 
 */
 
+
 #include "madjack.h"
+#include <lo/lo.h>
 
 #ifndef _MADJACK_LO_H_
 #define _MADJACK_LO_H_
 
-
-void set_state( enum madjack_state new_state );
-const char* get_state_name( enum madjack_state state );
-
+// Prototypes
+lo_server_thread init_liblo( char *port );
+void finish_liblo( lo_server_thread st );
 
 #endif
