@@ -102,7 +102,8 @@ int main(int argc, char *argv[])
 		lo_send(addr, "/deck/eject", "");
 	} else if (strcmp( argv[0], "load") == 0) {
 		// Check for argument
-		lo_send(addr, "/deck/load", "s");
+		if (argc<2) usage( );
+		lo_send(addr, "/deck/load", "s", argv[1]);
 	} else if (strcmp( argv[0], "status") == 0) {
 		lo_send(addr, "/deck/get_status", "");
 	} else if (strcmp( argv[0], "position") == 0) {
