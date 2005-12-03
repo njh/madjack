@@ -86,7 +86,14 @@ static
 int load_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 void *data, void *user_data)
 {
-	//do_load();
+	// Double check arguments
+	if (argc!=1 || types[0] != LO_STRING) {
+		fprintf(stderr, "Error: was expecting single string argument to /deck/load\n");
+		return -1;
+	}
+
+	// Load the requested track
+	do_load( &argv[0]->s );
     return 0;
 }
 
