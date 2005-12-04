@@ -173,7 +173,6 @@ lo_server_thread init_osc( char *port )
 
 	if (verbose) printf( "OSC server thread started: %s\n",
 		lo_server_thread_get_url( st ) );
-	lo_server_thread_pp( st );
 	
 	return st;
 }
