@@ -46,11 +46,12 @@ void usage( )
 	exit(1);
 }
 
-static void error(int num, const char *msg, const char *path)
+
+static
+void error_handler(int num, const char *msg, const char *path)
 {
     printf("liblo server error %d in path %s: %s\n", num, path, msg);
 }
-
 
 static
 int state_handler(const char *path, const char *types, lo_arg **argv, int argc,
@@ -128,7 +129,7 @@ int main(int argc, char *argv[])
 
 
 	// Create a server for receiving replies on
-    serv = lo_server_new(NULL, error);
+    serv = lo_server_new(NULL, error_handler);
 	lo_server_add_method( serv, "/deck/state", "s", state_handler, NULL);
 	lo_server_add_method( serv, "/deck/position", "f", position_handler, NULL);
 	lo_server_add_method( serv, "/pong", "", ping_handler, NULL);
