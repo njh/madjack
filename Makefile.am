@@ -9,8 +9,8 @@ madjack_SOURCES = \
 	control.h \
 	maddecode.c \
 	maddecode.h \
-	mjlo.c \
-	mjlo.h \
+	mjosc.c \
+	mjosc.h \
 	madjack.c \
 	madjack.h
 

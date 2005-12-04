@@ -1,6 +1,6 @@
 /*
 
-	mjlo.c
+	mjosc.c
 	MPEG Audio Deck for the jack audio connection kit
 	Copyright (C) 2005  Nicholas J. Humfrey
 	
@@ -31,7 +31,7 @@
 
 #include "control.h"
 #include "madjack.h"
-#include "mjlo.h"
+#include "mjosc.h"
 #include "config.h"
 
 
@@ -134,7 +134,7 @@ int wildcard_handler(const char *path, const char *types, lo_arg **argv, int arg
 
 
 
-lo_server_thread init_liblo( char *port )
+lo_server_thread init_osc( char *port )
 {
 	lo_server_thread st;
 	
@@ -158,16 +158,16 @@ lo_server_thread init_liblo( char *port )
 	// Start the thread
 	lo_server_thread_start(st);
 
-	if (verbose) printf( "LibLO server thread started: %s\n",
+	if (verbose) printf( "OSC server thread started: %s\n",
 		lo_server_thread_get_url( st ) );
 	
 	return st;
 }
 
 
-void finish_liblo( lo_server_thread st )
+void finish_osc( lo_server_thread st )
 {
-	if (verbose) printf( "Stopping LibLO server thread.\n");
+	if (verbose) printf( "Stopping OSC server thread.\n");
 
 	lo_server_thread_stop( st );
 	lo_server_thread_free( st );

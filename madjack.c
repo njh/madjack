@@ -33,7 +33,7 @@
 
 
 #include "control.h"
-#include "mjlo.h"
+#include "mjosc.h"
 #include "madjack.h"
 #include "maddecode.h"
 #include "config.h"
@@ -367,7 +367,7 @@ int main(int argc, char *argv[])
 	}
     
 	// Initialise LibLO
-	if (port) osc_thread = init_liblo( port );
+	if (port) osc_thread = init_osc( port );
 
 	// Initialise JACK
 	init_jack( client_name );
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 
 	
 	// Shut down LibLO
-	if (osc_thread) finish_liblo( osc_thread );
+	if (osc_thread) finish_osc( osc_thread );
 
 	// Wait for decoder thread to terminate
 	finish_decoder_thread();
