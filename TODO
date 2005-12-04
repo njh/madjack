@@ -5,6 +5,8 @@ In order of priority:
 
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
+ - better checking of source of replies in OSC two way communication
+ 
  - calculate duration of tracks
  
  - allow seeking to specific points
@@ -13,6 +15,6 @@ In order of priority:
 
 
 
-Add support for other formats
-  (libsndfile, Ogg Vorbis, FLAC...)
+ - Add support for other formats
+   (libsndfile, Ogg Vorbis, FLAC...)
   

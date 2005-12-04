@@ -40,6 +40,8 @@
 struct termios saved_attributes;
 
 
+#define MAX_FILENAME_LEN	(255)
+
 
 static void
 reset_input_mode (void)
@@ -74,6 +76,62 @@ set_input_mode (void)
 	tattr.c_cc[VTIME] = 0;
 	tcsetattr (STDIN_FILENO, TCSAFLUSH, &tattr);
 }
+
+// Read in the name of a file from STDIN
+static
+char* read_filename()
+{
+	char *filename = malloc(MAX_FILENAME_LEN);
+	int i;
+	
+	reset_input_mode();
+
+	printf("Enter name of file to load: ");
+	fgets( filename, MAX_FILENAME_LEN-1, stdin );
+	
+	// Remove carrage return from end of filename
+	for(i=0; i<MAX_FILENAME_LEN; i++) {
+		if (filename[i]==10 || filename[i]==13) filename[i]=0;
+	}
+
+	set_input_mode( );
+	
+	return filename;
+}
+
+// Concatinate a filename on the end of the root path
+static
+char* build_filepath( const char* root, const char* name )
+{
+	int len = 0;
+	char* filepath;
+	
+	// Calculate length of full filepath
+	len = strlen(root_directory) + strlen(name) + 2;
+	filepath = malloc( len );
+	if (!filepath) {
+		perror("failed to allocate memory for filepath");
+		exit(1);
+	}
+	
+	// Copy root directory to start of filepath
+	strcpy( filepath, root_directory );
+	
+	// Remove surplus trailing slash(es)
+	len = strlen(filepath);
+	while( len > 1 && filepath[len-1] == '/' ) {
+		filepath[--len] = '\0';
+	}
+	
+	// Append a slash
+	filepath[len] = '/';
+	
+	// Append the filename
+	strcpy( filepath+len+1, name );
+	
+	return filepath;
+}
+
 
 
 
@@ -201,6 +259,7 @@ void do_eject()
 		if (input_file->file) {
 			fclose(input_file->file);
 			input_file->file = NULL;
+			free(input_file->filepath);
 			input_file->filepath = NULL;
 		}
 		
@@ -218,8 +277,9 @@ void do_eject()
 }
 
 
+
 // Load Track into Deck
-void do_load( char* name )
+void do_load( const char* name )
 {
 	if (verbose) printf("-> do_load(%s)\n", name);
 	
@@ -233,10 +293,11 @@ void do_load( char* name )
 	// Check it really is empty
 	if (get_state() == MADJACK_STATE_EMPTY )
 	{
-		if (!quiet) printf("Loading: %s\n", name);
-
+		// Pre-pend the root directory path
+		input_file->filepath = build_filepath( root_directory, name);
+		if (!quiet) printf("Loading: %s\n", input_file->filepath);
+		
 		// Open the new file
-		input_file->filepath = name;
 		input_file->file = fopen( input_file->filepath, "r" );
 		if (input_file->file==NULL) {
 			perror("Failed to open input file");
@@ -274,26 +335,6 @@ void display_keyhelp()
 	printf( "\n" );	
 }
 
-
-char* read_filename()
-{
-	char *filename = malloc(255);
-	int i;
-	
-	reset_input_mode();
-
-	printf("Enter name of file to load: ");
-	fgets( filename, 254, stdin );
-	for(i=0; i<254; i++) {
-		if (filename[i]==10 || filename[i]==13) {
-			filename[i]=0;
-		}
-	}
-
-	set_input_mode( );
-	
-	return filename;
-}
 
 
 void handle_keypresses()

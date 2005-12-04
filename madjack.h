@@ -31,7 +31,6 @@
 // ------- Constants -------
 #define RINGBUFFER_DURATION		(4.0)
 #define READ_BUFFER_SIZE		(2048)
-#define MAX_FILEPATH_LEN		(1024)
 #define DEFAULT_CLIENT_NAME		"madjack"
 
 
@@ -51,7 +50,6 @@ typedef struct input_file_struct {
 	unsigned int buffer_size;
 	unsigned int buffer_used;
 	FILE* file;
-	char* name;
 	char* filepath;
 } input_file_t;
 

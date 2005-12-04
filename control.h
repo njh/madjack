@@ -24,7 +24,7 @@
 #ifndef _CONTROL_H_
 #define _CONTROL_H_
 
-void do_load( char* name );
+void do_load( const char* name );
 void do_cue();
 void do_play();
 void do_pause();

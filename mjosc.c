@@ -153,7 +153,8 @@ lo_server_thread init_osc( char *port )
 	
 	// Create new server
 	st = lo_server_thread_new( port, error_handler );
-
+	if (!st) return NULL;
+	
 	// Add the methods
 	lo_server_thread_add_method( st, "/deck/play", "", play_handler, NULL);
 	lo_server_thread_add_method( st, "/deck/pause", "", pause_handler, NULL);
