@@ -44,7 +44,7 @@ void error_handler(int num, const char *msg, const char *path)
 
 static
 int play_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	do_play();
     return 0;
@@ -52,7 +52,7 @@ int play_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 static
 int pause_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	do_pause();
     return 0;
@@ -60,7 +60,7 @@ int pause_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 static
 int stop_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	do_stop();
     return 0;
@@ -68,7 +68,7 @@ int stop_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 static
 int cue_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	do_cue();
     return 0;
@@ -76,7 +76,7 @@ int cue_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 static
 int eject_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	do_eject();
     return 0;
@@ -84,7 +84,7 @@ int eject_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 static
 int load_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	// Double check arguments
 	if (argc!=1 || types[0] != LO_STRING) {
@@ -98,32 +98,45 @@ int load_handler(const char *path, const char *types, lo_arg **argv, int argc,
 }
 
 static
-int status_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+int state_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
 {
+	lo_address src = lo_message_get_source( msg );
+	
+	// Send back reply
+	lo_send( src, "/deck/state", "s", get_state_name( get_state() ) );
 
     return 0;
 }
 
 static
 int position_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
+	lo_address src = lo_message_get_source( msg );
+	
+	// Send back reply
+	lo_send( src, "/deck/position", "f", position );
 
     return 0;
 }
 
 static
 int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
+	lo_address src = lo_message_get_source( msg );
+	if (verbose) printf( "Got ping from: %s\n", lo_address_get_url(src));
+	
+	// Send back reply
+	lo_send( src, "/pong", "" );
 
     return 0;
 }
 
 static
 int wildcard_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 void *data, void *user_data)
+		 lo_message msg, void *user_data)
 {
 	if (verbose) {
 		fprintf(stderr, "Warning: unhandled OSC message: '%s' with args '%s'.\n", path, types);
@@ -148,7 +161,7 @@ lo_server_thread init_osc( char *port )
 	lo_server_thread_add_method( st, "/deck/cue", "", cue_handler, NULL);
 	lo_server_thread_add_method( st, "/deck/eject", "", eject_handler, NULL);
 	lo_server_thread_add_method( st, "/deck/load", "s", load_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/get_status", "", status_handler, NULL);
+	lo_server_thread_add_method( st, "/deck/get_state", "", state_handler, NULL);
 	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, NULL);
 	lo_server_thread_add_method( st, "/ping", "", ping_handler, NULL);
 
@@ -160,6 +173,7 @@ lo_server_thread init_osc( char *port )
 
 	if (verbose) printf( "OSC server thread started: %s\n",
 		lo_server_thread_get_url( st ) );
+	lo_server_thread_pp( st );
 	
 	return st;
 }

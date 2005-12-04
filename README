@@ -62,9 +62,9 @@ OSC Interface
  /deck/load <s>		
 
 
- /deck/get_status
+ /deck/get_state
  replies with:
- /deck/status <s>
+ /deck/state <s>
  
  /deck/get_position
  replies with:

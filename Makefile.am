@@ -14,7 +14,7 @@ madjack_SOURCES = \
 	madjack.c \
 	madjack.h
 
-madjack_remote_CFLAGS = -Wall @LIBLO_CFLAGS@
+madjack_remote_CFLAGS = -g -Wall @LIBLO_CFLAGS@
 madjack_remote_LDFLAGS = @LIBLO_LIBS@
 madjack_remote_SOURCES = madjack-remote.c
 

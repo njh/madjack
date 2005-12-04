@@ -22,6 +22,9 @@
 #include "config.h"
 
 
+#define REPLY_TIMEOUT	(1000)		// Number of milliseconds to wait for a reply
+
+
 // Display how to use this program
 static
 void usage( )
@@ -37,12 +40,49 @@ void usage( )
 	printf("  cue               Cue deck to start of track\n");
 	printf("  eject             Eject the current track from deck\n");
 	printf("  load <filename>   Load <filename> into deck\n");
-	printf("  status            Get deck status\n");
+	printf("  state             Get deck state\n");
 	printf("  position          Get playback position (in seocnds)\n");
 	printf("  ping              Check deck is still there\n");
 	exit(1);
 }
 
+static void error(int num, const char *msg, const char *path)
+{
+    printf("liblo server error %d in path %s: %s\n", num, path, msg);
+}
+
+
+static
+int state_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	printf("State: %s\n", &argv[0]->s);
+    return 0;
+}
+
+static
+int position_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	printf("Position: %2.2f\n", argv[0]->f);
+    return 0;
+}
+
+static
+int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	printf("Pong.\n");
+    return 0;
+}
+
+
+void wait_for_reply( lo_server serv ) {
+	int size = lo_server_recv_noblock(serv, REPLY_TIMEOUT);
+
+	// Did we get a reply ?
+	if (!size) fprintf(stderr, "Error: didn't recieve a reply from MadJACK server after %d milliseconds.\n", REPLY_TIMEOUT);
+}
 
 
 int main(int argc, char *argv[])
@@ -50,6 +90,7 @@ int main(int argc, char *argv[])
 	char *port = NULL;
 	char *url = NULL;
 	lo_address addr = NULL;
+	lo_server serv = NULL;
 	int opt;
 
 	// Parse Switches
@@ -81,12 +122,16 @@ int main(int argc, char *argv[])
     if (argc<1) usage( );
     
     
-	// Create address structure
-	if (port) {
-		addr = lo_address_new(NULL, port);
-	} else {
-		addr = lo_address_new_from_url(url);
-	}
+	// Create address structure to send on
+	if (port) 	addr = lo_address_new(NULL, port);
+	else		addr = lo_address_new_from_url(url);
+
+
+	// Create a server for receiving replies on
+    serv = lo_server_new(NULL, error);
+	lo_server_add_method( serv, "/deck/state", "s", state_handler, NULL);
+	lo_server_add_method( serv, "/deck/position", "f", position_handler, NULL);
+	lo_server_add_method( serv, "/pong", "", ping_handler, NULL);
 
 
 	// Check to see what message to send
@@ -104,12 +149,15 @@ int main(int argc, char *argv[])
 		// Check for argument
 		if (argc!=2) usage( );
 		lo_send(addr, "/deck/load", "s", argv[1]);
-	} else if (strcmp( argv[0], "status") == 0) {
-		lo_send(addr, "/deck/get_status", "");
+	} else if (strcmp( argv[0], "state") == 0) {
+		lo_send(addr, "/deck/get_state", "");
+		wait_for_reply( serv );
 	} else if (strcmp( argv[0], "position") == 0) {
 		lo_send(addr, "/deck/get_position", "");
+		wait_for_reply( serv );
 	} else if (strcmp( argv[0], "ping") == 0) {
 		lo_send(addr, "/ping", "");
+		wait_for_reply( serv );
 	} else {
 		fprintf(stderr, "Unknown command '%s'.\n", argv[0]);
 		usage();
@@ -117,7 +165,9 @@ int main(int argc, char *argv[])
 	
 	
     lo_address_free( addr );
+    lo_server_free( serv );
 
     return 0;
 }
+
 
