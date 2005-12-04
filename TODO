@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
 
+ - Manually connect JACK ports from command line of madjack
+ 
  - Write manpages for madjack and madjack-remote
  
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
