@@ -9,9 +9,9 @@ http://www.ecs.soton.ac.uk/~njh/madjack/
 What is MadJACK ?
 -----------------
 
-MadJACK is a MPEG Audio Deck for the Jack Audio Connection Kit 
-with an OSC based control interface. It was written as a backend 
-for DJ music playback.
+MadJACK is a MPEG Audio Deck for the Jack Audio Connection Kit with 
+an OSC based control interface. It was written as a backend for DJ 
+music playback and is released under the GPL licence.
 
 It aims to achieve the following:
  - Talk natively to JACK
