@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
 
+ - Write manpages for madjack and madjack-remote
+ 
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
  - better checking of source of replies in OSC two way communication
