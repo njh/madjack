@@ -14,6 +14,7 @@ an OSC based control interface. It was written as a backend for DJ
 music playback and is released under the GPL licence.
 
 It aims to achieve the following:
+ - Lightweight
  - Talk natively to JACK
  - Easy to script / remote control
  - High Quality audio
