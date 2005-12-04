@@ -26,6 +26,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
