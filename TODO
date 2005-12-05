@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
 
+ - Change to use OSCQS style OSC messages
+
  - Manually connect JACK ports from command line of madjack
  
  - Write manpages for madjack and madjack-remote
