@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
 
+ - mad.pc doesn't come with package sources (check for libary manually)
+ 
  - Change to use OSCQS style OSC messages
 
  - Manually connect JACK ports from command line of madjack
@@ -16,6 +18,8 @@ In order of priority:
  - calculate duration of tracks
  
  - allow seeking to specific points
+ 
+ - allow changing of cue point
  
  - adjust playback speed
 
