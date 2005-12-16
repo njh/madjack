@@ -1,0 +1,30 @@
+MadJACK perl interface
+======================
+
+
+INSTALLATION
+------------
+
+	I use Module::Build to build and install the module.
+	To install this module type the following:
+	
+		perl Build.PL
+		./Build
+		./Build test
+		
+	And then as root:
+	
+		./Build install
+
+
+AUTHOR
+------
+
+	Nicholas J. Humfrey, njh@aelius.com
+
+
+COPYRIGHT
+---------
+
+	Copyright (C) 2005 Nicholas J. Humfrey
+
