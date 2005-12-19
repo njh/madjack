@@ -18,6 +18,7 @@ In order of priority:
  - better checking of source of replies in OSC two way communication
  
  - calculate duration of tracks
+   (seconds	= (bytes * 8) / bitrate / 10)
  
  - allow seeking to specific points
  
