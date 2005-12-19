@@ -23,6 +23,7 @@ It aims to achieve the following:
  - Reliable / Not Crash
 
 It does not do the following:
+ - Have pitch control on playback (yet!)
  - Decode metadata/ID3 tags
  - Queue up multiple tracks
  - Have playlists
