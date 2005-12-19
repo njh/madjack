@@ -3,9 +3,9 @@ MadJACK TODO List
 
 In order of priority:
 
- - mad.pc doesn't come with package sources (check for libary manually)
- 
- - Change to use OSCQS style OSC messages
+ - New OSC methods for getting the file name/path
+
+ - Create Audio::MadJack perl module
 
  - Manually connect JACK ports from command line of madjack
  
