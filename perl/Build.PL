@@ -9,7 +9,7 @@ use strict;
 my $build = Module::Build->new
 (
 	module_name => 'Audio::MadJACK',
-	license => 'perl',
+	license => 'gpl',
 	build_requires => {
 		'Module::Build' => '0.20'
 	},

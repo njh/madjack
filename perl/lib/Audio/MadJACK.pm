@@ -19,38 +19,75 @@ $VERSION="0.01";
 
 sub new {
     my $class = shift;
-    my ($url) = @_;
-    
+
     # Bless the hash into an object
-    my $self = { 'method_handlers'=>[] };
+    my $self = { 
+    	state => undef,
+    	position => undef,
+    	filename => undef,
+    	filepath => undef
+    };
     bless $self, $class;
+
+    # Create address of MadJACK server
+    $self->{addr} = new Net::LibLO::Address( @_ );
+    if (!defined $self->{addr}) {
+    	carp("Error creating Net::LibLO::Address");
+    	return undef;
+    }
         
-    # Create new server instance
-    $self->{server} = Net::LibLO::lo_server_new_with_proto( $port, $protocol );
-    if (!defined $self->{server}) {
-    	carp("Error creating lo_server");
-    	undef $self;
+    # Create new LibLO instance
+    $self->{lo} = new Net::LibLO();
+    if (!defined $self->{lo}) {
+    	carp("Error creating Net::LibLO");
+    	return undef;
     }
 
    	return $self;
 }
 
 
-#sub play {
-#    my $self=shift;
-#    my ($foo, $bar) = @_;
-#
-#}
 
-
-sub DESTROY {
-    my $self=shift;
-    
-    if (defined $self->{server}) {
-    	Net::LibLO::lo_server_free( $self->{server} );
-    	undef $self->{server};
-    }
+sub play {
+	my $self=shift;
+	return $self->{lo}->send( $self->{addr}, '/deck/play', '' );
 }
+
+sub pause {
+	my $self=shift;
+	return $self->{lo}->send( $self->{addr}, '/deck/pause', '' );
+}
+
+sub stop {
+	my $self=shift;
+	return $self->{lo}->send( $self->{addr}, '/deck/stop', '' );
+}
+
+sub cue {
+	my $self=shift;
+	return $self->{lo}->send( $self->{addr}, '/deck/cue', '' );
+}
+
+sub eject {
+	my $self=shift;
+	return $self->{lo}->send( $self->{addr}, '/deck/eject', '' );
+}
+
+sub load {
+	my $self=shift;
+	my ($filename) = @_;
+	return $self->{lo}->send( $self->{addr}, '/deck/load', 's', $filename );
+}
+
+sub _wait_reply {
+
+}
+
+# get_state()
+# get_position()
+# get_filename()
+# get_filepath()
+# ping()
 
 
 1;
@@ -65,18 +102,13 @@ Audio::MadJACK - Perl interface for liblo Lightweight OSC library
 
 =head1 DESCRIPTION
 
-liblo-perl is a Perl Interface for the liblo Lightweight OSC library.
 
 
 =head1 SEE ALSO
 
-L<Net::LibLO::Address>
+L<Net::LibLO>
 
-L<Net::LibLO::Bundle>
-
-L<Net::LibLO::Message>
-
-L<http://plugin.org.uk/liblo/>
+L<http://www.ecs.soton.ac.uk/~njh/madjack/>
 
 =head1 AUTHOR
 
