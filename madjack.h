@@ -65,6 +65,9 @@ extern char * root_directory;
 extern int verbose;
 extern int quiet;
 extern float position;
+extern float duration;
+extern float cuepoint;
+extern int bitrate;
 
 
 // ------- Prototypes -------

@@ -49,7 +49,10 @@ jack_client_t *client = NULL;
 input_file_t *input_file = NULL;	// Input file info structure
 int state = MADJACK_STATE_EMPTY;	// State of MadJACK
 char * root_directory = "";			// Root directory (files loaded relative to this)
-float position = 0.0;				// Position in track in seconds
+float position = 0.0;				// Position in track (seconds)
+float duration = 0.0;				// Duration of track (seconds)
+float cuepoint = 0.0;				// Cue point of track (seconds)
+int birate = 0;						// The bitrate of the MPEG Audio (in kbps)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
 

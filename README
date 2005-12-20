@@ -51,7 +51,7 @@ Command Line Interface
 
 madjack_remote <command>
 
- play, pause, stop, cue, eject, load <filename>, status, position, ping
+ play, pause, stop, cue, eject, load <filename>, status, position, filename, filepath, ping
 
 
 OSC Interface
@@ -83,6 +83,12 @@ OSC Interface
  /ping               - Check deck is still there
   replies with:
  /pong
+ 
+ 
+ /deck/get_duration
+ /deck/get_cue
+ /deck/set_cue <f>
+ 
  
  
 Replies are send back to the port/socket that they were sent from.

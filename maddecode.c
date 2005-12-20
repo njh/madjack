@@ -150,12 +150,26 @@ static
 enum mad_flow callback_header(void *data,
 		struct mad_header const *header)
 {
+	static int warned_vbr;
+	
 	//printf("samplerate of file: %d\n", header->samplerate);
 	if (jack_get_sample_rate( client ) != header->samplerate) {
-		printf("Error: Sample rate of input file (%d) is different to JACK's (%d)\n",
+		fprintf(stderr, "Error: Sample rate of input file (%d) is different to JACK's (%d)\n",
 				header->samplerate, jack_get_sample_rate( client ) );
 		
 		return MAD_FLOW_BREAK;
+	}
+	
+	// Check to see if bitrate has changed
+	if (bitrate==0) {
+		bitrate = header->bitrate;
+		warned_vbr=0;
+		if (verbose) printf( "Bitrate: %d kbps.\n", bitrate );
+	} else if (bitrate != header->bitrate) {
+		if (!warned_vbr) {
+			fprintf(stderr, "Warning: Bitrate changed during decoding, VBR is not recommended.\n");
+			warned_vbr=1;
+		}
 	}
 	
 	// Header looks OK
