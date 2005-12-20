@@ -1,4 +1,12 @@
-Version 0.1 (2005-12-04)
-------------------------
+Mon Dec 5 23:42:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
 
-- Initial Release
+  * initial Release (version 0.1)
+
+
+Tue Dec 20 01:23:47 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+
+  * Changed OSC code to lo_send_from
+  * Added get_filename and get_filepath OSC methods
+  * bugfixes in build_filepath
+ 
+

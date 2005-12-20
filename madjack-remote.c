@@ -41,7 +41,9 @@ void usage( )
 	printf("  eject             Eject the current track from deck\n");
 	printf("  load <filename>   Load <filename> into deck\n");
 	printf("  state             Get deck state\n");
-	printf("  position          Get playback position (in seocnds)\n");
+	printf("  position          Get playback position (in seconds)\n");
+	printf("  filepath          Get path of the currently loaded file\n");
+	printf("  filename          Get name (minus path/suffix) of file\n");
 	printf("  ping              Check deck is still there\n");
 	exit(1);
 }
@@ -68,6 +70,24 @@ int position_handler(const char *path, const char *types, lo_arg **argv, int arg
 	printf("Position: %2.2f\n", argv[0]->f);
     return 0;
 }
+
+static
+int filepath_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	printf("Filepath: %s\n", &argv[0]->s);
+    return 0;
+}
+
+
+static
+int filename_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	printf("Filename: %s\n", &argv[0]->s);
+    return 0;
+}
+
 
 static
 int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
@@ -132,32 +152,40 @@ int main(int argc, char *argv[])
     serv = lo_server_new(NULL, error_handler);
 	lo_server_add_method( serv, "/deck/state", "s", state_handler, addr);
 	lo_server_add_method( serv, "/deck/position", "f", position_handler, addr);
+	lo_server_add_method( serv, "/deck/filepath", "s", filepath_handler, addr);
+	lo_server_add_method( serv, "/deck/filename", "s", filename_handler, addr);
 	lo_server_add_method( serv, "/pong", "", ping_handler, addr);
 
 
 	// Check to see what message to send
 	if (strcmp( argv[0], "play") == 0) {
-		lo_send(addr, "/deck/play", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/play", "");
 	} else if (strcmp( argv[0], "pause") == 0) {
-		lo_send(addr, "/deck/pause", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/pause", "");
 	} else if (strcmp( argv[0], "stop") == 0) {
-		lo_send(addr, "/deck/stop", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/stop", "");
 	} else if (strcmp( argv[0], "cue") == 0) {
-		lo_send(addr, "/deck/cue", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/cue", "");
 	} else if (strcmp( argv[0], "eject") == 0) {
-		lo_send(addr, "/deck/eject", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/eject", "");
 	} else if (strcmp( argv[0], "load") == 0) {
 		// Check for argument
 		if (argc!=2) usage( );
-		lo_send(addr, "/deck/load", "s", argv[1]);
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/load", "s", argv[1]);
 	} else if (strcmp( argv[0], "state") == 0) {
-		lo_send(addr, "/deck/get_state", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_state", "");
 		wait_for_reply( serv );
 	} else if (strcmp( argv[0], "position") == 0) {
-		lo_send(addr, "/deck/get_position", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_position", "");
+		wait_for_reply( serv );
+	} else if (strcmp( argv[0], "filepath") == 0) {
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_filepath", "");
+		wait_for_reply( serv );
+	} else if (strcmp( argv[0], "filename") == 0) {
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_filename", "");
 		wait_for_reply( serv );
 	} else if (strcmp( argv[0], "ping") == 0) {
-		lo_send(addr, "/ping", "");
+		lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/ping", "");
 		wait_for_reply( serv );
 	} else {
 		fprintf(stderr, "Unknown command '%s'.\n", argv[0]);

@@ -40,8 +40,6 @@
 struct termios saved_attributes;
 
 
-#define MAX_FILENAME_LEN	(255)
-
 
 static void
 reset_input_mode (void)
@@ -124,16 +122,40 @@ char* build_filepath( const char* root, const char* name )
 	}
 	
 	// Append a slash
-	filepath[len] = '/';
+	if (len) filepath[len++] = '/';
 	
 	// Append the filename
-	strcpy( filepath+len+1, name );
+	strcpy( filepath+len, name );
 	
 	return filepath;
 }
 
 
+static
+void extract_filename( input_file_t *input )
+{
+	int i;
+	
+	// Check pointer is valid
+	if (input==NULL) return;
+	
+	// Find the last slash by working backwards from the end
+	for(i=strlen(input->filepath); i>=1 && input->filepath[i-1]!='/'; i-- );
+	
+	// Copy it across
+	strncpy( input->filename, input->filepath+i, MAX_FILENAME_LEN );
+	
+	// Remove the suffix
+	for(i=strlen(input->filename); i>=1; i-- ) {
+		if (input->filename[i] == '.') {
+			input->filename[i] = '\0';
+			break;
+		}
+	}
+	
+	if (verbose) printf("filename: %s\n", input->filename);
 
+}
 
 
 
@@ -261,6 +283,7 @@ void do_eject()
 			input_file->file = NULL;
 			free(input_file->filepath);
 			input_file->filepath = NULL;
+			input_file->filename[0] = '\0';
 		}
 		
 		// Reset position
@@ -294,8 +317,11 @@ void do_load( const char* name )
 	if (get_state() == MADJACK_STATE_EMPTY )
 	{
 		// Pre-pend the root directory path
-		input_file->filepath = build_filepath( root_directory, name);
+		input_file->filepath = build_filepath( root_directory, name );
 		if (!quiet) printf("Loading: %s\n", input_file->filepath);
+		
+		// Extract the filename (minus extension) from the full path
+		extract_filename( input_file );
 		
 		// Open the new file
 		input_file->file = fopen( input_file->filepath, "r" );

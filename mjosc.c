@@ -102,9 +102,11 @@ int state_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 lo_message msg, void *user_data)
 {
 	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
 	
 	// Send back reply
-	lo_send( src, "/deck/state", "s", get_state_name( get_state() ) );
+	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	              "/deck/state", "s", get_state_name( get_state() ) );
 
     return 0;
 }
@@ -114,9 +116,44 @@ int position_handler(const char *path, const char *types, lo_arg **argv, int arg
 		 lo_message msg, void *user_data)
 {
 	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
 	
 	// Send back reply
-	lo_send( src, "/deck/position", "f", position );
+	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	              "/deck/position", "f", position );
+
+    return 0;
+}
+
+static
+int filepath_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
+
+	// Send back reply
+	if (input_file->filepath) {
+		lo_send_from( src, serv, LO_TT_IMMEDIATE,
+					  "/deck/filepath", "s", input_file->filepath );
+	} else {
+		// Empty filepath
+		lo_send_from( src, serv, LO_TT_IMMEDIATE, "/deck/filepath", "s", "" );
+	}
+
+    return 0;
+}
+
+static
+int filename_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
+
+	// Send back reply
+	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	              "/deck/filename", "s", input_file->filename );
 
     return 0;
 }
@@ -126,10 +163,11 @@ int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 lo_message msg, void *user_data)
 {
 	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
 	if (verbose) printf( "Got ping from: %s\n", lo_address_get_url(src));
 	
 	// Send back reply
-	lo_send( src, "/pong", "" );
+	lo_send_from( src, serv, LO_TT_IMMEDIATE, "/pong", "" );
 
     return 0;
 }
@@ -149,22 +187,26 @@ int wildcard_handler(const char *path, const char *types, lo_arg **argv, int arg
 
 lo_server_thread init_osc( char *port )
 {
-	lo_server_thread st;
+	lo_server_thread st = NULL;
+	lo_server serv = NULL;
 	
 	// Create new server
 	st = lo_server_thread_new( port, error_handler );
 	if (!st) return NULL;
 	
 	// Add the methods
-	lo_server_thread_add_method( st, "/deck/play", "", play_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/pause", "", pause_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/stop", "", stop_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/cue", "", cue_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/eject", "", eject_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/load", "s", load_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/get_state", "", state_handler, NULL);
-	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, NULL);
-	lo_server_thread_add_method( st, "/ping", "", ping_handler, NULL);
+	serv = lo_server_thread_get_server( st );
+	lo_server_thread_add_method( st, "/deck/play", "", play_handler, serv);
+	lo_server_thread_add_method( st, "/deck/pause", "", pause_handler, serv);
+	lo_server_thread_add_method( st, "/deck/stop", "", stop_handler, serv);
+	lo_server_thread_add_method( st, "/deck/cue", "", cue_handler, serv);
+	lo_server_thread_add_method( st, "/deck/eject", "", eject_handler, serv);
+	lo_server_thread_add_method( st, "/deck/load", "s", load_handler, serv);
+	lo_server_thread_add_method( st, "/deck/get_state", "", state_handler, serv);
+	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, serv);
+	lo_server_thread_add_method( st, "/deck/get_filepath", "", filepath_handler, serv);
+	lo_server_thread_add_method( st, "/deck/get_filename", "", filename_handler, serv);
+	lo_server_thread_add_method( st, "/ping", "", ping_handler, serv);
 
     // add method that will match any path and args
     lo_server_thread_add_method(st, NULL, NULL, wildcard_handler, NULL);

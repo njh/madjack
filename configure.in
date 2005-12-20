@@ -5,7 +5,7 @@ AC_PREREQ(2.57)
 
 dnl ############# Initialization
 
-AC_INIT([madjack], [0.1], [njh@ecs.soton.ac.uk])
+AC_INIT([madjack], [0.2], [njh@ecs.soton.ac.uk])
 
 AC_CONFIG_SRCDIR( madjack.c )
 AC_CANONICAL_SYSTEM
@@ -46,7 +46,7 @@ AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
 
 # Check for LibLO
-PKG_CHECK_MODULES(LIBLO, liblo)
+PKG_CHECK_MODULES(LIBLO, liblo >= 0.23)
 
 
 

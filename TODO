@@ -3,8 +3,6 @@ MadJACK TODO List
 
 In order of priority:
 
- - New OSC methods for getting the file name/path
-
  - Create Audio::MadJack perl module
  
  - Forbid VBR files

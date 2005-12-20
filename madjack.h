@@ -32,6 +32,7 @@
 #define RINGBUFFER_DURATION		(4.0)
 #define READ_BUFFER_SIZE		(2048)
 #define DEFAULT_CLIENT_NAME		"madjack"
+#define MAX_FILENAME_LEN		(255)
 
 
 enum madjack_state {
@@ -51,6 +52,7 @@ typedef struct input_file_struct {
 	unsigned int buffer_used;
 	FILE* file;
 	char* filepath;
+	char filename[MAX_FILENAME_LEN];
 } input_file_t;
 
 
