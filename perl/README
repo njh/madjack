@@ -35,6 +35,7 @@ API Overview
 		- get_position()
 		- get_filename()
 		- get_filepath()
+		- get_url();
 		- ping()
 		
 
