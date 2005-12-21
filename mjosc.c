@@ -103,10 +103,12 @@ int state_handler(const char *path, const char *types, lo_arg **argv, int argc,
 {
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
+	int result;
 	
 	// Send back reply
-	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
 	              "/deck/state", "s", get_state_name( get_state() ) );
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
 
     return 0;
 }
@@ -117,10 +119,12 @@ int position_handler(const char *path, const char *types, lo_arg **argv, int arg
 {
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
+	int result;
 	
 	// Send back reply
-	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
 	              "/deck/position", "f", position );
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
 
     return 0;
 }
@@ -131,15 +135,17 @@ int filepath_handler(const char *path, const char *types, lo_arg **argv, int arg
 {
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
+	int result;
 
 	// Send back reply
 	if (input_file->filepath) {
-		lo_send_from( src, serv, LO_TT_IMMEDIATE,
+		result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
 					  "/deck/filepath", "s", input_file->filepath );
 	} else {
 		// Empty filepath
-		lo_send_from( src, serv, LO_TT_IMMEDIATE, "/deck/filepath", "s", "" );
+		result = lo_send_from( src, serv, LO_TT_IMMEDIATE, "/deck/filepath", "s", "" );
 	}
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
 
     return 0;
 }
@@ -150,10 +156,12 @@ int filename_handler(const char *path, const char *types, lo_arg **argv, int arg
 {
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
+	int result;
 
 	// Send back reply
-	lo_send_from( src, serv, LO_TT_IMMEDIATE,
+	result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
 	              "/deck/filename", "s", input_file->filename );
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
 
     return 0;
 }
@@ -164,10 +172,12 @@ int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
 {
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
+	int result;
 	if (verbose) printf( "Got ping from: %s\n", lo_address_get_url(src));
 	
 	// Send back reply
-	lo_send_from( src, serv, LO_TT_IMMEDIATE, "/pong", "" );
+	result = lo_send_from( src, serv, LO_TT_IMMEDIATE, "/pong", "" );
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
 
     return 0;
 }
