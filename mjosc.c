@@ -214,8 +214,7 @@ lo_server_thread init_osc( char *port )
 	// Start the thread
 	lo_server_thread_start(st);
 
-	if (verbose) printf( "OSC server thread started: %s\n",
-		lo_server_thread_get_url( st ) );
+	if (!quiet) printf( "OSC server URL: %s\n", lo_server_thread_get_url( st ) );
 	
 	return st;
 }
