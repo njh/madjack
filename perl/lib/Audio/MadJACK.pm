@@ -104,7 +104,8 @@ sub get_state {
 
 sub _state_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{state}=$_[0];
+	$userdata->{state}=$params[0];
+	return 0; # Success
 }
 
 sub get_position {
@@ -116,7 +117,8 @@ sub get_position {
 
 sub _position_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{position}=$_[0];
+	$userdata->{position}=$params[0];
+	return 0; # Success
 }
 
 sub get_filename {
@@ -128,7 +130,8 @@ sub get_filename {
 
 sub _filename_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{filename}=$_[0];
+	$userdata->{filename}=$params[0];
+	return 0; # Success
 }
 
 sub get_filepath {
@@ -140,7 +143,8 @@ sub get_filepath {
 
 sub _filepath_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{filepath}=$_[0];
+	$userdata->{filepath}=$params[0];
+	return 0; # Success
 }
 
 sub ping {
@@ -153,6 +157,7 @@ sub ping {
 sub _pong_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
 	$userdata->{pong}++;
+	return 0; # Success
 }
 
 sub get_url {
@@ -163,19 +168,24 @@ sub get_url {
 sub _wait_reply {
 	my $self=shift;
 	my ($path) = @_;
-	my $attempts = 3;
+	my $attempts = 4;
 	my $bytes = 0;
 
 	# Try a few times
 	for(1..$attempts) {
 	
 		# Send Query
-		$self->{lo}->send( $self->{addr}, $path, '' );
+		my $result = $self->{lo}->send( $self->{addr}, $path, '' );
+		if ($result<1) {
+			warn "Failed to send message ($path): ".$self->{addr}->errstr()."\n";
+			sleep(1);
+			next;
+		}
 
-		# Wait for reply within 0.25 seconds
-		$bytes = $self->{lo}->recv_noblock( 250 );
+		# Wait for reply within one second
+		$bytes = $self->{lo}->recv_noblock( 1000 );
 		if ($bytes<1) {
-			warn "Timed out waiting for reply after 0.25 seconds\n";
+			warn "Timed out waiting for reply after one second.\n";
 		} else { last; }
 	}
 	
