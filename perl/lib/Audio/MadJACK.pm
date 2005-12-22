@@ -12,9 +12,10 @@ use Carp;
 use Net::LibLO;
 use strict;
 
-use vars qw/$VERSION/;
+use vars qw/$VERSION $ATTEMPTS/;
 
 $VERSION="0.01";
+$ATTEMPTS=5;
 
 
 sub new {
@@ -65,33 +66,33 @@ sub new {
 sub load {
 	my $self=shift;
 	my ($filename) = @_;
-	return $self->{lo}->send( $self->{addr}, '/deck/load', 's', $filename );
+	return $self->_send( '/deck/load', 'LOADING|READY|ERROR', 's', $filename);
 }
 
 
 sub play {
 	my $self=shift;
-	return $self->{lo}->send( $self->{addr}, '/deck/play', '' );
+	return $self->_send( '/deck/play', 'PLAYING');
 }
 
 sub pause {
 	my $self=shift;
-	return $self->{lo}->send( $self->{addr}, '/deck/pause', '' );
+	return $self->_send( '/deck/pause', 'PAUSED');
 }
 
 sub stop {
 	my $self=shift;
-	return $self->{lo}->send( $self->{addr}, '/deck/stop', '' );
+	return $self->_send( '/deck/stop', 'STOPPED');
 }
 
 sub cue {
 	my $self=shift;
-	return $self->{lo}->send( $self->{addr}, '/deck/cue', '' );
+	return $self->_send( '/deck/cue', 'LOADING|READY');
 }
 
 sub eject {
 	my $self=shift;
-	return $self->{lo}->send( $self->{addr}, '/deck/eject', '' );
+	return $self->_send( '/deck/eject', 'EMPTY');
 }
 
 
@@ -165,14 +166,41 @@ sub get_url {
 	return $self->{addr}->get_url();
 }
 
+
+sub _send {
+	my $self=shift;
+	my ($path, $desired, $typespec, @params) = @_;
+	my $state = undef;
+	
+	# Empty typespec if non specified
+	$typespec = '' unless (defined $typespec);
+	
+	# Try a few times
+	for(1..$ATTEMPTS) {
+		my $result = $self->{lo}->send( $self->{addr}, $path, $typespec, @params );
+		warn "Warning: failed to send '$path' OSC message.\n" if ($result<1);
+
+		# Check what state the player is in now
+		$state = $self->get_state();
+		last if ($state =~ /^$desired$/i);
+	}
+	
+	# Finally return true if we are in desired state
+	if ($state =~ /^$desired$/i) { return 1 }
+	else { return 0 }
+}
+
+
 sub _wait_reply {
 	my $self=shift;
 	my ($path) = @_;
-	my $attempts = 4;
 	my $bytes = 0;
+	
+	# Throw away any old incoming messages
+	for(1..$ATTEMPTS) { $self->{lo}->recv_noblock( 0 ); }
 
 	# Try a few times
-	for(1..$attempts) {
+	for(1..$ATTEMPTS) {
 	
 		# Send Query
 		my $result = $self->{lo}->send( $self->{addr}, $path, '' );
@@ -191,7 +219,7 @@ sub _wait_reply {
 	
 	# Failed to get reply ?
 	if ($bytes<1) {
-		warn "Failed to get reply from MadJACK server after $attempts attempts.\n";
+		warn "Failed to get reply from MadJACK server after $ATTEMPTS attempts.\n";
 	}
 	
 	return $bytes;
@@ -238,25 +266,37 @@ Send a message to the deck requesting that C<filename> is loaded.
 Note: it is up to the developer to check to see if the file was 
 successfully loaded, by calling the C<get_state()> method.
 
+Returns 1 if command was successfully received or 0 on error.
+
 =item B<play()>
 
 Tell the deck to start playing the current track.
+
+Returns 1 if command was successfully received or 0 on error.
 
 =item B<pause()>
 
 Tell the deck to pause the current track.
 
+Returns 1 if command was successfully received or 0 on error.
+
 =item B<stop()>
 
 Tell the deck to stop decoding and playback of the current track.
+
+Returns 1 if command was successfully received or 0 on error.
 
 =item B<cue()>
 
 Tell the deck to start decoding from the cue point.
 
+Returns 1 if command was successfully received or 0 on error.
+
 =item B<eject()>
 
 Close the currect track loaded.
+
+Returns 1 if command was successfully received or 0 on error.
 
 =item B<get_state()>
 
@@ -269,6 +309,7 @@ Returns one of the following strings:
    - LOADING
    - STOPPED
    - EMPTY
+   - ERROR
    
 If no reply if received from the server or there is an error then 
 C<undef> is returned.
@@ -291,7 +332,8 @@ C<undef> is returned.
 
 =item B<get_filepath()>
 
-Returns the full file path of the track currently loaded in the deck.
+Returns the file path of the track currently loaded in the deck 
+(path will be in the same form as originally passed to load()).
 
 If no track is currently loaded then an empty string is returned.
 If no reply if received from the server or there is an error then 

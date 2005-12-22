@@ -10,11 +10,11 @@ use Audio::MadJACK;
 use Term::ReadKey;
 use strict;
 
-# Create MadJACK object for talking to server
+# Create MadJACK object for talking to the deck
 my $madjack = new Audio::MadJACK(@ARGV);
 exit(-1) unless (defined $madjack);
 
-# Display the URL of the madjack server we connected to
+# Display the URL of the MadJACK deck we connected to
 print "URL of madjack server: ".$madjack->get_url()."\n";
 
 
@@ -42,6 +42,9 @@ while( $running ) {
 			ReadMode(3);
 		} elsif ($key eq 's') {
 			$madjack->stop()
+		} elsif ($key eq 'f') {
+			print "Filename: ".$madjack->get_filename();
+			print " (".$madjack->get_filepath().")\n";
 		} elsif ($key eq 'c') {
 			$madjack->cue()
 		} elsif ($key eq 'e') {
