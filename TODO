@@ -11,20 +11,20 @@ In order of priority:
  
  - Write manpages for madjack and madjack-remote
  
+ - calculate duration of tracks
+   (seconds	= (bytes * 8) / bitrate / 10)
+ 
+ - allow seeking to specific position
+ 
+ - allow changing of cue point
+ 
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
  - better checking of source of replies in OSC two way communication
  
- - calculate duration of tracks
-   (seconds	= (bytes * 8) / bitrate / 10)
- 
- - allow seeking to specific points
- 
- - allow changing of cue point
+ - make pause/play smoother (rapid fade?)
  
  - adjust playback speed
- 
- - make pause/play smoother (rapid fade?)
 
 
 
