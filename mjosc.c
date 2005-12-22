@@ -173,8 +173,14 @@ int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
 	lo_address src = lo_message_get_source( msg );
 	lo_server serv = (lo_server)user_data;
 	int result;
-	if (verbose) printf( "Got ping from: %s\n", lo_address_get_url(src));
 	
+	// Display the address the ping came from
+	if (verbose) {
+		char *url = lo_address_get_url(src);
+		printf( "Got ping from: %s\n", url);
+		free(url);
+	}
+
 	// Send back reply
 	result = lo_send_from( src, serv, LO_TT_IMMEDIATE, "/pong", "" );
 	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
@@ -224,7 +230,11 @@ lo_server_thread init_osc( char *port )
 	// Start the thread
 	lo_server_thread_start(st);
 
-	if (!quiet) printf( "OSC server URL: %s\n", lo_server_thread_get_url( st ) );
+	if (!quiet) {
+		char *url = lo_server_thread_get_url( st );
+		printf( "OSC server URL: %s\n", url );
+		free(url);
+	}
 	
 	return st;
 }

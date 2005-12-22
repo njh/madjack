@@ -177,7 +177,7 @@ void do_play()
 		
 		// Wait until track is loaded
 		while ( get_state() == MADJACK_STATE_LOADING ) {
-			if (verbose) printf("Waiting for decoder thread to load.\n");
+			if (verbose) printf("Waiting for decoder thread to start.\n");
 			usleep( 5000 );
 		}
 		
@@ -206,7 +206,7 @@ void do_cue()
 
 		// Wait for the old thread to stop
 		while( is_decoding ) {
-			if (verbose) printf("Waiting for old thread to stop.\n");
+			if (verbose) printf("Waiting for decoder thread to stop.\n");
 			usleep( 5000 );
 		}
 	
@@ -273,7 +273,7 @@ void do_eject()
 	
 		// Wait for decoder to finish
 		while( is_decoding ) {
-			if (verbose) printf("Waiting for decoder to stop.\n");
+			if (verbose) printf("Waiting for decoder thread to stop.\n");
 			usleep( 5000 );
 		}
 
