@@ -108,12 +108,6 @@ enum mad_flow callback_output(void *data,
 	right_ch  = pcm->samples[1];
 
 	
-	// If we have decoded a frame, then we have gone from
-	//   Loading to Ready
-	if (get_state()==MADJACK_STATE_LOADING) {
-		set_state( MADJACK_STATE_READY );
-	}
-	
 	// Sleep until there is room in the ring buffer
 	while( jack_ringbuffer_write_space( ringbuffer[0] )
 	          < (nsamples * sizeof(float) ) )
@@ -125,6 +119,12 @@ enum mad_flow callback_output(void *data,
 			get_state() == MADJACK_STATE_QUIT)
 		return MAD_FLOW_STOP;
 
+		// If ringbuffer if full and we are still in LOADING state
+		// then we are ready for JACK to start emptying the ring-buffer
+		if (get_state()==MADJACK_STATE_LOADING) {
+			set_state( MADJACK_STATE_READY );
+		}
+		
 		usleep(1000);
 	}
 
@@ -141,6 +141,8 @@ enum mad_flow callback_output(void *data,
 		if (pcm->channels == 2) sample = mad_f_todouble(*right_ch++);
 		jack_ringbuffer_write( ringbuffer[1], (char*)&sample, sizeof(sample) );
 	}
+
+	
 	
 	return MAD_FLOW_CONTINUE;
 }
