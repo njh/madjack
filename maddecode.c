@@ -62,6 +62,12 @@ enum mad_flow callback_input(void *data,
 	// At end of file ?
 	if (feof(input->file))
 		return MAD_FLOW_STOP;
+		
+	// Check state and possibly abort
+	if (get_state() == MADJACK_STATE_STOPPED ||
+		get_state() == MADJACK_STATE_EMPTY ||
+		get_state() == MADJACK_STATE_QUIT)
+	return MAD_FLOW_STOP;
 	
 	// Any unused bytes left in buffer ?
 	if(stream->next_frame) {
@@ -114,8 +120,7 @@ enum mad_flow callback_output(void *data,
 	{
 	
 		// Check state and possibly abort
-		if (get_state() == MADJACK_STATE_LOADING || 
-			get_state() == MADJACK_STATE_STOPPED ||
+		if (get_state() == MADJACK_STATE_STOPPED ||
 			get_state() == MADJACK_STATE_EMPTY ||
 			get_state() == MADJACK_STATE_QUIT)
 		return MAD_FLOW_STOP;
@@ -254,9 +259,10 @@ void *thread_decode_mad(void *input)
 
 	if (verbose) printf("Decoder thread exiting.\n");
 
-	// If we got here while loading, we must be stopped
-	if (get_state() == MADJACK_STATE_LOADING )
-		set_state( MADJACK_STATE_STOPPED );
+	// If we got here while loading, then something went wrong
+	if (get_state() == MADJACK_STATE_LOADING ) {
+		set_state( MADJACK_STATE_ERROR );
+	}
 
 	is_decoding = 0;
 	

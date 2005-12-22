@@ -80,7 +80,7 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			// Not enough samples ?
 			if (len < to_read) {
 				if (is_decoding) {
-					fprintf(stderr, "warning: ringbuffer underrun.\n");
+					fprintf(stderr, "Error: ringbuffer underrun, aborting playback.\n");
 				} else {
 					// Must have reached end of file
 				}
@@ -269,6 +269,7 @@ const char* get_state_name( enum madjack_state state )
 		case MADJACK_STATE_LOADING: return "LOADING";
 		case MADJACK_STATE_STOPPED: return "STOPPED";
 		case MADJACK_STATE_EMPTY: return "EMPTY";
+		case MADJACK_STATE_ERROR: return "ERROR";
 		case MADJACK_STATE_QUIT: return "QUIT";
 		default: return "UNKNOWN";
 	}

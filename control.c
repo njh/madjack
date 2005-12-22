@@ -185,7 +185,7 @@ void do_play()
 	}
 	else if (get_state() != MADJACK_STATE_PLAYING)
 	{
-		fprintf(stderr, "Warning: Can't change to PLAYING from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change from %s to state PLAYING.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -195,16 +195,19 @@ void do_cue()
 {
 	if (verbose) printf("-> do_cue()\n");
 	
+	// Stop first
 	if (get_state() == MADJACK_STATE_PLAYING ||
-	    get_state() == MADJACK_STATE_PAUSED ||
+	    get_state() == MADJACK_STATE_PAUSED)
+	{
+		set_state( MADJACK_STATE_STOPPED );
+	}
+	
+	// Start the new thread
+	if (get_state() == MADJACK_STATE_LOADING ||
 	    get_state() == MADJACK_STATE_STOPPED )
 	{
 
-		// Change to stopped	
-		set_state( MADJACK_STATE_STOPPED );
-
-
-		// Wait for the old thread to stop
+		// Ensure the old thread is stopped
 		while( is_decoding ) {
 			if (verbose) printf("Waiting for decoder thread to stop.\n");
 			usleep( 5000 );
@@ -217,7 +220,7 @@ void do_cue()
 	}
 	else if (get_state() != MADJACK_STATE_READY)
 	{
-		fprintf(stderr, "Warning: Can't change to READY from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change from %s to state READY.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -233,7 +236,7 @@ void do_pause()
 	}
 	else if (get_state() != MADJACK_STATE_PAUSED)
 	{
-		fprintf(stderr, "Warning: Can't change to PAUSED from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change from %s to state PAUSED.\n", get_state_name(get_state()) );
 	}
 }
 
@@ -242,7 +245,6 @@ void do_pause()
 void do_stop()
 {
 	if (verbose) printf("-> do_stop()\n");
-	set_state( MADJACK_STATE_STOPPED );
 
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED ||
@@ -252,7 +254,7 @@ void do_stop()
 	}
 	else if (get_state() != MADJACK_STATE_STOPPED)
 	{
-		fprintf(stderr, "Warning: Can't change to STOPPED from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change from %s to state STOPPED.\n", get_state_name(get_state()) );
 	}
 
 }
@@ -263,14 +265,18 @@ void do_eject()
 {
 	if (verbose) printf("-> do_eject()\n");
 
+	// Stop first
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED ||
-	    get_state() == MADJACK_STATE_READY ||
-	    get_state() == MADJACK_STATE_STOPPED )
+	    get_state() == MADJACK_STATE_READY)
 	{
-		// Stop first
 		set_state( MADJACK_STATE_STOPPED );
+	}
 	
+	if (get_state() == MADJACK_STATE_STOPPED ||
+	    get_state() == MADJACK_STATE_ERROR)
+	{
+
 		// Wait for decoder to finish
 		while( is_decoding ) {
 			if (verbose) printf("Waiting for decoder thread to stop.\n");
@@ -294,7 +300,7 @@ void do_eject()
 	}
 	else if (get_state() != MADJACK_STATE_EMPTY)
 	{
-		fprintf(stderr, "Warning: Can't change to EMPTY from state %s.\n", get_state_name(get_state()) );
+		fprintf(stderr, "Warning: Can't change from %s to state EMPTY.\n", get_state_name(get_state()) );
 	}
 	
 }
@@ -318,6 +324,8 @@ void do_load( const char* filepath )
 	{
 		char* fullpath;
 	
+		set_state( MADJACK_STATE_LOADING );
+		
 		// Pre-pend the root directory path
 		fullpath = build_fullpath( root_directory, filepath );
 		if (!quiet) printf("Loading: %s\n", fullpath);
@@ -327,6 +335,7 @@ void do_load( const char* filepath )
 		free( fullpath );
 		if (input_file->file==NULL) {
 			perror("Failed to open input file");
+			set_state( MADJACK_STATE_ERROR );
 			return;
 		}
 		
@@ -335,9 +344,6 @@ void do_load( const char* filepath )
 		
 		// Extract the filename (minus extension) from the path
 		extract_filename( input_file );
-		
-		// We are now effectively in the 'STOPPED' state
-		set_state( MADJACK_STATE_STOPPED );
 		
 		// Cue up the new file	
 		do_cue();
