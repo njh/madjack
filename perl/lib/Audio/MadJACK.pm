@@ -62,6 +62,11 @@ sub new {
    	return $self;
 }
 
+sub load {
+	my $self=shift;
+	my ($filename) = @_;
+	return $self->{lo}->send( $self->{addr}, '/deck/load', 's', $filename );
+}
 
 
 sub play {
@@ -89,11 +94,6 @@ sub eject {
 	return $self->{lo}->send( $self->{addr}, '/deck/eject', '' );
 }
 
-sub load {
-	my $self=shift;
-	my ($filename) = @_;
-	return $self->{lo}->send( $self->{addr}, '/deck/load', 's', $filename );
-}
 
 sub get_state {
 	my $self=shift;
@@ -206,11 +206,106 @@ __END__
 
 =head1 NAME
 
-Audio::MadJACK - Perl interface for liblo Lightweight OSC library
+Audio::MadJACK - Talk to MadJACK server using Object Oriented Perl
+
+=head1 SYNOPSIS
+
+  use Audio::MadJACK;
+
+  my $mj = new Audio::MadJACK( 'osc.udp://madjack.example.net/' );
+  $mj->load( 'Playlist_A/mymusic.mp3' );
+  $mj->play();
+
 
 =head1 DESCRIPTION
 
+The Audio::MadJACK module uses Net::LibLO to talk to a 
+MadJACK (MPEG Audio Deck) server. It has an Object Oriented style 
+API making it simple to control multiple decks from a single script.
 
+
+=over 4
+
+=item B<new( oscurl )>
+
+Connect to MadJACK deck specified by C<oscurl>.
+A ping is sent to the MadJACK deck to check to see if it is there.
+If a reply is not recieved or there was an error then C<undef> is returned.
+
+=item B<load( filename )>
+
+Send a message to the deck requesting that C<filename> is loaded.
+Note: it is up to the developer to check to see if the file was 
+successfully loaded, by calling the C<get_state()> method.
+
+=item B<play()>
+
+Tell the deck to start playing the current track.
+
+=item B<pause()>
+
+Tell the deck to pause the current track.
+
+=item B<stop()>
+
+Tell the deck to stop decoding and playback of the current track.
+
+=item B<cue()>
+
+Tell the deck to start decoding from the cue point.
+
+=item B<eject()>
+
+Close the currect track loaded.
+
+=item B<get_state()>
+
+Returns the current state of the MadJACK deck.
+Returns one of the following strings:
+
+   - PLAYING
+   - PAUSED
+   - READY
+   - LOADING
+   - STOPPED
+   - EMPTY
+   
+If no reply if received from the server or there is an error then 
+C<undef> is returned.
+
+=item B<get_position()>
+
+Returns the deck's position (in seconds) in the current track. 
+   
+If no reply if received from the server or there is an error then 
+C<undef> is returned.
+
+=item B<get_filename()>
+
+Returns the filename of the track currently loaded in the deck.
+The filename is stripped of its path and suffix.
+
+If no track is currently loaded then an empty string is returned.
+If no reply if received from the server or there is an error then 
+C<undef> is returned.
+
+=item B<get_filepath()>
+
+Returns the full file path of the track currently loaded in the deck.
+
+If no track is currently loaded then an empty string is returned.
+If no reply if received from the server or there is an error then 
+C<undef> is returned.
+
+=item B<ping()>
+
+Pings the remote deck to see if it is there.
+
+Returns 1 if the server responds, or 0 if there is no reply.
+
+=item B<get_url()>
+
+Returns the OSC URL of the MadJACK deck.
 
 =head1 SEE ALSO
 
