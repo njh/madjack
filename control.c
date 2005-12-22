@@ -348,6 +348,10 @@ void do_load( const char* filepath )
 		// Cue up the new file	
 		do_cue();
 	}
+	else if (get_state() != MADJACK_STATE_EMPTY)
+	{
+		fprintf(stderr, "Warning: Can't change from %s to state LOADING.\n", get_state_name(get_state()) );
+	}
 	
 }
 
