@@ -3,12 +3,10 @@ MadJACK TODO List
 
 In order of priority:
 
- - Create Audio::MadJack perl module
+ - make get_filepath return the full filepath
  
  - Run through profiling/check for memory leaks
  
- - Forbid VBR files
-
  - Manually connect JACK ports from command line of madjack
  
  - Write manpages for madjack and madjack-remote
