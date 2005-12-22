@@ -99,7 +99,7 @@ char* read_filename()
 
 // Concatinate a filename on the end of the root path
 static
-char* build_filepath( const char* root, const char* name )
+char* build_fullpath( const char* root, const char* name )
 {
 	int len = 0;
 	char* filepath;
@@ -302,9 +302,9 @@ void do_eject()
 
 
 // Load Track into Deck
-void do_load( const char* name )
+void do_load( const char* filepath )
 {
-	if (verbose) printf("-> do_load(%s)\n", name);
+	if (verbose) printf("-> do_load(%s)\n", filepath);
 	
 	// Can only load if Deck is empty
 	if (get_state() != MADJACK_STATE_EMPTY )
@@ -316,19 +316,25 @@ void do_load( const char* name )
 	// Check it really is empty
 	if (get_state() == MADJACK_STATE_EMPTY )
 	{
+		char* fullpath;
+	
 		// Pre-pend the root directory path
-		input_file->filepath = build_filepath( root_directory, name );
-		if (!quiet) printf("Loading: %s\n", input_file->filepath);
-		
-		// Extract the filename (minus extension) from the full path
-		extract_filename( input_file );
+		fullpath = build_fullpath( root_directory, filepath );
+		if (!quiet) printf("Loading: %s\n", fullpath);
 		
 		// Open the new file
-		input_file->file = fopen( input_file->filepath, "r" );
+		input_file->file = fopen( fullpath, "r" );
+		free( fullpath );
 		if (input_file->file==NULL) {
 			perror("Failed to open input file");
 			return;
 		}
+		
+		// Copy string
+		input_file->filepath = strdup( filepath );
+		
+		// Extract the filename (minus extension) from the path
+		extract_filename( input_file );
 		
 		// We are now effectively in the 'STOPPED' state
 		set_state( MADJACK_STATE_STOPPED );
