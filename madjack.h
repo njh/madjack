@@ -29,7 +29,7 @@
 
 
 // ------- Constants -------
-#define RINGBUFFER_DURATION		(4.0)
+#define RINGBUFFER_DURATION		(5.0)
 #define READ_BUFFER_SIZE		(2048)
 #define DEFAULT_CLIENT_NAME		"madjack"
 #define MAX_FILENAME_LEN		(255)
@@ -40,9 +40,10 @@ enum madjack_state {
 	MADJACK_STATE_PAUSED,		// 1: Deck is paused in mid-playback
 	MADJACK_STATE_READY,		// 2: Deck is loaded and ready to play
 	MADJACK_STATE_LOADING,		// 3: In process of loading deck
-	MADJACK_STATE_STOPPED,		// 4: Deck is stopped (mid-track or at end)
+	MADJACK_STATE_STOPPED,		// 4: Track is loaded but not decoding
 	MADJACK_STATE_EMPTY,		// 5: No track is loaded in deck
-	MADJACK_STATE_QUIT			// 6: Time to quit
+	MADJACK_STATE_ERROR,		// 6: Problem opening/decoding track
+	MADJACK_STATE_QUIT			// 7: Time to quit
 };
 
 
