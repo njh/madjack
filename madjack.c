@@ -106,6 +106,15 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 }
 
 
+static
+void shutdown_callback_jack(void *arg)
+{
+	fprintf(stderr, "Warning: MadJACK quitting because jackd is shutting down.\n" );
+
+	// Shutdown if jackd stops
+	set_state( MADJACK_STATE_QUIT );
+}
+
 
 
 
@@ -181,6 +190,8 @@ void init_jack( const char* client_name )
 		}
 	}
 
+	// Register shutdown callback
+	jack_on_shutdown (client, shutdown_callback_jack, NULL );
 
 	// Register callback
 	jack_set_process_callback(client, callback_jack, NULL);
@@ -378,9 +389,6 @@ int main(int argc, char *argv[])
     	printf("%s only takes a single, optional, filename argument.\n", PACKAGE_NAME);
     	usage();
 	}
-    
-	// Initialise LibLO
-	if (port) osc_thread = init_osc( port );
 
 	// Initialise JACK
 	init_jack( client_name );
@@ -394,6 +402,9 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
+	// Initialise LibLO
+	if (port) osc_thread = init_osc( port );
+
 	// Setup signal handlers
 	signal(SIGTERM, termination_handler);
 	signal(SIGINT, termination_handler);
@@ -403,6 +414,7 @@ int main(int argc, char *argv[])
 	// Auto-connect our output ports ?
 	if (autoconnect) autoconnect_jack_ports( client );
 
+    
 	// Load an initial track ?
 	if (argc) do_load( *argv );
 
