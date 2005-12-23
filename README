@@ -62,11 +62,11 @@ OSC Interface
  /deck/stop          - Stop Deck playback
  /deck/cue           - Cue deck to start of track
  /deck/eject         - Eject the current track from deck
- /deck/load <s>      - Load <filename> into deck
+ /deck/load (s)      - Load <filename> into deck
 
  /deck/get_state     - Get deck state
   replies with:
- /deck/state <s>
+ /deck/state (s)
  
  State Strings:
     PLAYING          - Deck is playing
@@ -74,22 +74,25 @@ OSC Interface
     READY            - Deck is loaded and ready to play
     LOADING          - Starting to decode track
     STOPPED          - At end of track / Stopped
+    ERROR            - Problem opening/decoding track
     EMPTY            - No track loaded in deck
  
  /deck/get_position  - Get deck position (in seconds)
   replies with:
- /deck/position <f>
-  
+ /deck/position (f)
+
+ /deck/get_filename  - Get name of track (minus suffix and path)
+  replies with:
+ /deck/filename (s)
+ 
+ /deck/get_filepath  - Get path of track (as passed to/deck/load)
+  replies with:
+ /deck/filepath (s)
+ 
  /ping               - Check deck is still there
   replies with:
  /pong
- 
- 
- /deck/get_duration
- /deck/get_cue
- /deck/set_cue <f>
- 
- 
- 
+
+
 Replies are send back to the port/socket that they were sent from.
 

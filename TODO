@@ -3,25 +3,19 @@ MadJACK TODO List
 
 In order of priority:
 
- - make get_filepath return the full filepath
- 
- - Run through profiling/check for memory leaks
- 
- - Manually connect JACK ports from command line of madjack
- 
  - Write manpages for madjack and madjack-remote
  
  - calculate duration of tracks
-   (seconds	= (bytes * 8) / bitrate / 10)
- 
- - allow seeking to specific position
+   (seconds = (bytes * 8) / bitrate / 10)
  
  - allow changing of cue point
+
+ - allow seeking to specific position
  
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
  - better checking of source of replies in OSC two way communication
- 
+
  - make pause/play smoother (rapid fade?)
  
  - adjust playback speed

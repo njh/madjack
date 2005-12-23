@@ -1,12 +1,20 @@
 Mon Dec 5 23:42:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
 
-  * initial Release (version 0.1)
+  * Initial Release (version 0.1)
 
 
-Tue Dec 20 01:23:47 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+Fri Dec 23 19:31:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
 
+  * New Release (version 0.2)
   * Changed OSC code to lo_send_from
   * Added get_filename and get_filepath OSC methods
   * bugfixes in build_filepath
- 
+  * fixed minor memory leaks
+  * only changes to 'READY' state once ringbuffer is full
+  * Added bitrate checking (warns about VBR)
+  * Added new 'ERROR' state for when decoding fails.
+  * If JACK server shuts down, then MadJACK now quits
+  * Added command line option to choose length of ringbuffer
+  * Can now connect jack ports on the commandline
+  * Reduced time display to 10 updates per second
 
