@@ -389,9 +389,9 @@ void handle_keypresses()
 	if (isatty(STDOUT_FILENO))
 		setbuf(stdout, NULL);
 
-	// Set timeout to 1/20 second
+	// Set timeout to 1/10 second
 	timeout.tv_sec = 0;
-	timeout.tv_usec = 50000;
+	timeout.tv_usec = 100000;
 
 	// Turn off input buffering on STDIN
 	set_input_mode( );
@@ -401,7 +401,7 @@ void handle_keypresses()
 
 		// Display position
 		if (!quiet && isatty(STDOUT_FILENO))
-			printf("[%2.2f]\r", position);
+			printf("[%1.1f]    \r", position);
 
 		// Watch socket to see when it has input.
 		FD_ZERO(&readfds);
