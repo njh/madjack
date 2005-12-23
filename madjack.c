@@ -235,6 +235,9 @@ void finish_inputfile(input_file_t* ptr)
 		fclose( ptr->file );
 		ptr->file = NULL;
 	}
+	
+	// Free filepath
+	if (ptr->filepath) free( ptr->filepath );
 
 	// Free up memory used by buffer
 	if (ptr->buffer) free( ptr->buffer );
@@ -402,7 +405,7 @@ int main(int argc, char *argv[])
 	// Handle user keypresses (main loop)
 	handle_keypresses();
 
-	
+
 	// Shut down LibLO
 	if (osc_thread) finish_osc( osc_thread );
 
