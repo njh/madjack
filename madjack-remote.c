@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
 	lo_address addr = NULL;
 	lo_server serv = NULL;
 	int need_reply = 0;
-	int result;
+	int result = -1;
 	int opt;
 
 	// Parse Switches
