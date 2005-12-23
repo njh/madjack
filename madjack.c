@@ -116,6 +116,18 @@ void shutdown_callback_jack(void *arg)
 }
 
 
+void connect_jack_port( jack_port_t *port, const char* in )
+{
+	const char* out = jack_port_name( port );
+	int err;
+		
+	if (!quiet) printf("Connecting %s to %s\n", out, in);
+	
+	if ((err = jack_connect(client, out, in)) != 0) {
+		fprintf(stderr, "connect_jack_port(): failed to jack_connect() ports: %d\n",err);
+		exit(1);
+	}
+}
 
 
 // crude way of automatically connecting up jack ports
@@ -123,7 +135,7 @@ void autoconnect_jack_ports( jack_client_t* client )
 {
 	const char **all_ports;
 	unsigned int ch=0;
-	int err,i;
+	int i;
 
 	// Get a list of all the jack ports
 	all_ports = jack_get_ports(client, NULL, NULL, JackPortIsInput);
@@ -134,17 +146,10 @@ void autoconnect_jack_ports( jack_client_t* client )
 	
 	// Step through each port name
 	for (i = 0; all_ports[i]; ++i) {
-
-		const char* in = jack_port_name( outport[ch] );
-		const char* out = all_ports[i];
 		
-		if (!quiet) printf("Connecting %s to %s\n", in, out);
+		// Connect the port
+		connect_jack_port( outport[ch], all_ports[i] );
 		
-		if ((err = jack_connect(client, in, out)) != 0) {
-			fprintf(stderr, "autoconnect_jack_ports(): failed to jack_connect() ports: %d\n",err);
-			exit(1);
-		}
-	
 		// Found enough ports ?
 		if (++ch >= 2) break;
 	}
@@ -315,14 +320,15 @@ void usage()
 {
 	printf("%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
 	printf("Usage: %s [options] [<filename>]\n", PACKAGE_NAME);
-	printf("   -a                Automatically connect JACK ports\n");
-	printf("   -j <left,right>   Connect our output ports to these inputs\n");
-	printf("   -n <name>         Name for this JACK client\n");
-	printf("   -p <port>         Enable LibLO and set port\n");
-	printf("   -d <dir>          Set root directory for audio files\n");
-	printf("   -r <secs>         Set duration of ringbuffer (in seconds)\n");
-	printf("   -v                Enable verbose mode\n");
-	printf("   -q                Enable quiet mode\n");
+	printf("   -a            Automatically connect JACK ports\n");
+	printf("   -l <port>     Connect left output to this input port\n");
+	printf("   -r <port>     Connect right output to this input port\n");
+	printf("   -n <name>     Name for this JACK client\n");
+	printf("   -p <port>     Enable LibLO and set port\n");
+	printf("   -d <dir>      Set root directory for audio files\n");
+	printf("   -R <secs>     Set duration of ringbuffer (in seconds)\n");
+	printf("   -v            Enable verbose mode\n");
+	printf("   -q            Enable quiet mode\n");
 	printf("\n");
 	exit(1);
 }
@@ -333,51 +339,32 @@ int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
 	char *client_name = DEFAULT_CLIENT_NAME;
+	char *connect_left = NULL;
+	char *connect_right = NULL;
 	lo_server_thread osc_thread = NULL;
 	char *port = NULL;
 	int opt;
 
 
 	// Parse Switches
-	while ((opt = getopt(argc, argv, "an:d:p:r:vqh")) != -1) {
+	while ((opt = getopt(argc, argv, "al:r:n:d:p:R:vqh")) != -1) {
 		switch (opt) {
-			case 'a':
-				autoconnect = 1;
-				break;
-				
-			case 'd':
-				root_directory = optarg;
-				break;
-		
-			case 'p':
-				port = optarg;
-				break;
-				
-			case 'n':
-				client_name = optarg;
-				break;
-
-			case 'r':
-				rb_duration = atof(optarg);
-				break;
-				
-			case 'v':
-				verbose = 1;
-				break;
-				
-			case 'q':
-				quiet = 1;
-				break;
-		
-			default:
-				usage();
-				break;
+			case 'a':  autoconnect = 1; break;
+			case 'l':  connect_left = optarg; break;
+			case 'r':  connect_right = optarg; break;
+			case 'd':  root_directory = optarg; break;
+			case 'p':  port = optarg; break;
+			case 'n':  client_name = optarg; break;
+			case 'R':  rb_duration = atof(optarg); break;
+			case 'v':  verbose = 1; break;
+			case 'q':  quiet = 1; break;
+			default:  usage(); break;
 		}
 	}
 	
 	// Validate parameters
 	if (quiet && verbose) {
-    	printf("Can't be quiet and verbose at the same time.\n");
+    	fprintf(stderr, "Can't be quiet and verbose at the same time.\n");
     	usage();
 	}
 
@@ -386,7 +373,7 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
     if (argc>1) {
-    	printf("%s only takes a single, optional, filename argument.\n", PACKAGE_NAME);
+    	fprintf(stderr, "%s only takes a single, optional, filename argument.\n", PACKAGE_NAME);
     	usage();
 	}
 
@@ -413,6 +400,8 @@ int main(int argc, char *argv[])
 	
 	// Auto-connect our output ports ?
 	if (autoconnect) autoconnect_jack_ports( client );
+	if (connect_left) connect_jack_port( outport[0], connect_left );
+	if (connect_right) connect_jack_port( outport[1], connect_right );
 
     
 	// Load an initial track ?

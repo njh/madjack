@@ -29,7 +29,7 @@
 
 
 // ------- Constants -------
-#define DEFAULT_RB_LEN			(4.0)
+#define DEFAULT_RB_LEN			(2.0)
 #define READ_BUFFER_SIZE		(2048)
 #define DEFAULT_CLIENT_NAME		"madjack"
 #define MAX_FILENAME_LEN		(255)
