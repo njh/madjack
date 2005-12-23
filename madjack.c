@@ -55,7 +55,7 @@ float cuepoint = 0.0;				// Cue point of track (seconds)
 int bitrate = 0;					// The bitrate of the MPEG Audio (in kbps)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
-
+float rb_duration = DEFAULT_RB_LEN;	// Duration of ring buffer (in seconds)
 
 
 
@@ -172,8 +172,8 @@ void init_jack( const char* client_name )
 	
 	
 	// Create ring buffers
-	ringbuffer_size = jack_get_sample_rate( client ) * RINGBUFFER_DURATION * sizeof(float);
-	if (verbose) printf("Size of the ring buffers is %2.2f seconds (%d bytes).\n", RINGBUFFER_DURATION, (int)ringbuffer_size );
+	ringbuffer_size = jack_get_sample_rate( client ) * rb_duration * sizeof(float);
+	if (verbose) printf("Size of the ring buffers is %2.2f seconds (%d bytes).\n", rb_duration, (int)ringbuffer_size );
 	for(i=0; i<2; i++) {
 		if (!(ringbuffer[i] = jack_ringbuffer_create( ringbuffer_size ))) {
 			fprintf(stderr, "Cannot create ringbuffer.\n");
@@ -309,6 +309,7 @@ void usage()
 	printf("   -n <name>         Name for this JACK client\n");
 	printf("   -p <port>         Enable LibLO and set port\n");
 	printf("   -d <dir>          Set root directory for audio files\n");
+	printf("   -r <secs>         Set duration of ringbuffer (in seconds)\n");
 	printf("   -v                Enable verbose mode\n");
 	printf("   -q                Enable quiet mode\n");
 	printf("\n");
@@ -327,7 +328,7 @@ int main(int argc, char *argv[])
 
 
 	// Parse Switches
-	while ((opt = getopt(argc, argv, "an:d:p:vqh")) != -1) {
+	while ((opt = getopt(argc, argv, "an:d:p:r:vqh")) != -1) {
 		switch (opt) {
 			case 'a':
 				autoconnect = 1;
@@ -343,6 +344,10 @@ int main(int argc, char *argv[])
 				
 			case 'n':
 				client_name = optarg;
+				break;
+
+			case 'r':
+				rb_duration = atof(optarg);
 				break;
 				
 			case 'v':
