@@ -2,6 +2,8 @@ MadJACK TODO List
 =================
 
 In order of priority:
+ 
+ - Add Jack Transport support
 
  - Write manpages for madjack and madjack-remote
  
