@@ -240,7 +240,7 @@ Audio::MadJACK - Talk to MadJACK server using Object Oriented Perl
 
   use Audio::MadJACK;
 
-  my $mj = new Audio::MadJACK( 'osc.udp://madjack.example.net/' );
+  my $mj = new Audio::MadJACK( 'osc.udp://madjack.example.net:4444/' );
   $mj->load( 'Playlist_A/mymusic.mp3' );
   $mj->play();
 
