@@ -225,7 +225,7 @@ lo_server_thread init_osc( char *port )
 	lo_server_thread_add_method( st, "/ping", "", ping_handler, serv);
 
     // add method that will match any path and args
-    lo_server_thread_add_method(st, NULL, NULL, wildcard_handler, NULL);
+    lo_server_thread_add_method(st, NULL, NULL, wildcard_handler, serv);
 
 	// Start the thread
 	lo_server_thread_start(st);
