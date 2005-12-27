@@ -18,3 +18,10 @@ Fri Dec 23 19:31:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
   * Can now connect jack ports on the commandline
   * Reduced time display to 10 updates per second
 
+
+Tue Dec 27 22:49:39 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+
+  * New Release (version 0.3)
+  * Bug fix for Linux - need to set timeout every time before select()
+
+
