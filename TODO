@@ -3,6 +3,10 @@ MadJACK TODO List
 
 In order of priority:
  
+ - Sort out evil multiple control threads problem :(
+     - problems with changing state at same time from
+       different threads
+       
  - Add Jack Transport support
 
  - Write manpages for madjack and madjack-remote

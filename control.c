@@ -170,19 +170,6 @@ void do_play()
 	{
 		set_state( MADJACK_STATE_PLAYING );
 	}
-	else if (get_state() == MADJACK_STATE_STOPPED)
-	{
-		// Re-cue up the the track
-		do_cue();
-		
-		// Wait until track is loaded
-		while ( get_state() == MADJACK_STATE_LOADING ) {
-			if (verbose) printf("Waiting for decoder thread to start.\n");
-			usleep( 5000 );
-		}
-		
-		set_state( MADJACK_STATE_PLAYING );
-	}
 	else if (get_state() != MADJACK_STATE_PLAYING)
 	{
 		fprintf(stderr, "Warning: Can't change from %s to state PLAYING.\n", get_state_name(get_state()) );
@@ -241,7 +228,8 @@ void do_stop()
 
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED ||
-	    get_state() == MADJACK_STATE_READY )
+	    get_state() == MADJACK_STATE_READY || 
+	    get_state() == MADJACK_STATE_LOADING )
 	{
 		// Store our new state
 		set_state( MADJACK_STATE_STOPPED );
@@ -274,7 +262,7 @@ void do_eject()
 	    get_state() == MADJACK_STATE_ERROR)
 	{
 
-		// Shut down decoder thread
+		// Ensure decoder thread is terminated
 		finish_decoder_thread();
 
 		// Close the input file
@@ -371,6 +359,48 @@ void display_keyhelp()
 	printf( "\n" );	
 }
 
+static
+void read_keypress()
+{
+	// Get keypress
+	int c = tolower( fgetc( stdin ) );
+	switch(c) {
+	
+		// Pause/Play
+		case 'p': 
+			if (get_state() == MADJACK_STATE_PLAYING) {
+				do_pause();
+			} else {
+				do_play();
+			}
+		break;
+		
+		// Load
+		case 'l': {
+			char* filename = read_filename();
+			do_load( filename );
+			free( filename );
+			break;
+		}
+
+		case 'c': do_cue(); break;
+		case 'e': do_eject(); break;
+		case 's': do_stop(); break;
+		case 'q': do_quit(); break;
+		
+		default:
+			printf( "Unknown command '%c'.\n", (char)c );
+		case 'h':
+		case '?':
+			display_keyhelp();
+		break;
+		
+		// Ignore return and enter
+		case 13:
+		case 10:
+		break;
+	}
+}
 
 
 void handle_keypresses()
@@ -405,52 +435,17 @@ void handle_keypresses()
 		// Check return value 
 		if (retval < 0) {
 			// Something went wrong
-			if (verbose) perror("select()");
-			return;
+			perror("select()");
+			break;
 			
 		} else if (retval > 0) {
+		
+			read_keypress();
 
-			// Get keypress
-			int c = tolower( fgetc( stdin ) );
-			switch(c) {
-			
-				// Pause/Play
-				case 'p': 
-					if (get_state() == MADJACK_STATE_PLAYING) {
-						do_pause();
-					} else {
-						do_play();
-					}
-				break;
-				
-				// Load
-				case 'l': {
-					char* filename = read_filename();
-					do_load( filename );
-					free( filename );
-					break;
-				}
-	
-				case 'c': do_cue(); break;
-				case 'e': do_eject(); break;
-				case 's': do_stop(); break;
-				case 'q': do_quit(); break;
-				
-				default:
-					printf( "Unknown command '%c'.\n", (char)c );
-				case 'h':
-				case '?':
-					display_keyhelp();
-				break;
-				
-				// Ignore return and enter
-				case 13:
-				case 10:
-				break;
-			}
 		}
 	}
 
-	
+	// Restore the input mode
+	reset_input_mode();
 }
 

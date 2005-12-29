@@ -37,9 +37,14 @@
 
 
 // ------- Globals -------
-pthread_t decoder_thread = NULL;	// The decoder thread
-int is_decoding = 0;				// Set to 1 while thread is running
-int terminate_decoder_thread = 0;	// Set to 1 to tell thread to stop
+pthread_t decoder_thread = NULL;    // The decoder thread
+int bitrate = 0;                    // The bitrate of the MPEG Audio (in kbps)
+int is_decoding = 0;                // Set to 1 while thread is running
+int terminate_decoder_thread = 0;   // Set to 1 to tell thread to stop
+
+// Mutex to make sure we don't stop/start decoder thread simultaneously
+pthread_mutex_t decoder_thread_control = PTHREAD_MUTEX_INITIALIZER;
+
 
 
 /*
@@ -57,12 +62,25 @@ enum mad_flow callback_input(void *data,
 	input_file_t *input = data;
 	
 	// No file open ?
-	if (input->file==NULL)
-		return MAD_FLOW_STOP;
+	if (input->file==NULL) {
+		fprintf(stderr, "Error: no file is NULL in callback_input()\n");
+		return MAD_FLOW_BREAK;
+	}
 
 	// At end of file ?
-	if (feof(input->file))
+	if (feof(input->file)) {
+		// Before we have filled the ringbuffer ?
+		if (get_state()==MADJACK_STATE_LOADING) {
+			// Anything in the ringbuffer ?
+			if (jack_ringbuffer_read_space( ringbuffer[0] ) == 0) {
+				fprintf(stderr, "Error: got to end of input file before putting any audio in the ringbuffer.\n");
+				return MAD_FLOW_BREAK;
+			} else {
+				set_state( MADJACK_STATE_READY );
+			}
+		}
 		return MAD_FLOW_STOP;
+	}
 		
 	// Abort thread ?
 	if (terminate_decoder_thread)
@@ -77,9 +95,8 @@ enum mad_flow callback_input(void *data,
 
 	// Read in some bytes
 	input->buffer_used += fread( input->buffer + input->buffer_used, 1, input->buffer_size - input->buffer_used, input->file);
-	if (input->buffer_used==0)
-		return MAD_FLOW_STOP;
-	
+
+	// Pass the buffer to libmad	
 	mad_stream_buffer(stream, input->buffer, input->buffer_used);
 	
 	return MAD_FLOW_CONTINUE;
@@ -200,7 +217,6 @@ enum mad_flow callback_error(void *data,
 
 	switch( stream->error ) {
 
-		// Warnings
 		case MAD_ERROR_LOSTSYNC:
 		case MAD_ERROR_BADCRC:
 		case MAD_ERROR_BADDATAPTR:
@@ -210,9 +226,11 @@ enum mad_flow callback_error(void *data,
 		return MAD_FLOW_CONTINUE;
 		
 		
-		// Errors
 		default:
-			fprintf(stderr, "Error: libmad decoding error: 0x%04x (%s)\n",
+			if (MAD_RECOVERABLE (stream->error))
+				 fprintf(stderr, "Warning: ");
+			else fprintf(stderr, "Error: ");
+			fprintf(stderr, "libmad decoding error: 0x%04x (%s)\n",
 				stream->error, mad_stream_errorstr(stream));
 		break;	
 	}
@@ -257,9 +275,6 @@ void *thread_decode_mad(void *input)
 		NULL 				// message callback
 	);
 
-	// Ignore CRC errors
-	mad_decoder_options(decoder, MAD_OPTION_IGNORECRC);
-	
 	// Start new thread for this:
 	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
 	if (result) {
@@ -272,8 +287,11 @@ void *thread_decode_mad(void *input)
 	
 	if (verbose) printf("Decoder thread exiting.\n");
 
-	// If we got here while loading, then something went wrong
-	if (get_state() == MADJACK_STATE_LOADING ) {
+	// If we got here while loading (and weren't told to stop), 
+	// then something went wrong
+	if (get_state() == MADJACK_STATE_LOADING &&
+	    terminate_decoder_thread == 0)
+	{
 		set_state( MADJACK_STATE_ERROR );
 	}
 
@@ -340,9 +358,20 @@ void start_decoder_thread(void *data)
 	input_file_t *input = data;
 	int result;
 	
-	// Cancel the previous thread
+	// Stop the previous thread
 	finish_decoder_thread();
 
+
+
+	// Don't allow another control thread to 
+	// start or stop the decoder thread
+	pthread_mutex_lock( &decoder_thread_control );
+	
+	// Sanity check
+	if (decoder_thread) {
+		fprintf(stderr, "Bad bad bad: decoder_thread is non-NULL while trying to start thread.\n");
+		exit(-1);
+	}
 
 	// Go to Loading state
 	set_state( MADJACK_STATE_LOADING );
@@ -355,6 +384,9 @@ void start_decoder_thread(void *data)
 	
 	// Empty out the read buffer
 	input->buffer_used = 0;
+	
+	// Reset the bitrate
+	bitrate = 0;
 	
 	// Empty out ringbuffers
 	jack_ringbuffer_reset( ringbuffer[0] );
@@ -371,24 +403,43 @@ void start_decoder_thread(void *data)
 		exit(-1);
 	}
 
+	pthread_mutex_unlock( &decoder_thread_control );
 }
 
 
 void finish_decoder_thread()
 {
-	// Signal the thread to terminate
-	terminate_decoder_thread = 1;
+	// Don't allow another control thread to 
+	// start or stop the decoder thread
+	pthread_mutex_lock( &decoder_thread_control );
 
 	if (decoder_thread) {
+		int result;
+	
+		// Signal the thread to terminate
+		terminate_decoder_thread = 1;
+
 		if (verbose && is_decoding)
 			printf("Waiting for decoder thread to finish.\n");
 		
 		// pthread_join waits for thread to terminate 
 		// and then releases the thread's resources
-		pthread_join( decoder_thread, NULL );
-		decoder_thread = NULL;
+		result = pthread_join( decoder_thread, NULL );
+		if (result) {
+			if (verbose)
+				fprintf(stderr, "Warning: pthread_join() failed: %s\n", strerror(result));
+		} else {
+			decoder_thread = NULL;
+		}
+	}
+	
+	// Sanity Check
+	if (is_decoding) {
+		fprintf(stderr, "Bad bad bad: decoder thread still decoding after it was shutdown.\n");
+		exit(-1);
 	}
 
+	pthread_mutex_unlock( &decoder_thread_control );
 }
 
 

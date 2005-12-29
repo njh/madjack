@@ -25,3 +25,12 @@ Tue Dec 27 22:49:39 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
   * Bug fix for Linux - need to set timeout every time before select()
 
 
+Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+
+  * New Release (version 0.4)
+  * Improvements to decoder thread handling
+  * Fixed bug where bitrate was not reset when loading a new file
+  * Bugfix for playing tracks shorter than the length of the ringbuffer
+  * Must now be either in READY or PAUSED states to enter PLAYING state
+  * Now allow changing to STOPPED from from state LOADING
+ 
