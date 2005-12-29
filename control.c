@@ -199,7 +199,7 @@ void do_cue()
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED)
 	{
-		set_state( MADJACK_STATE_STOPPED );
+		do_stop();
 	}
 	
 	// Start the new thread
@@ -207,14 +207,7 @@ void do_cue()
 	    get_state() == MADJACK_STATE_STOPPED )
 	{
 
-		// Ensure the old thread is stopped
-		while( is_decoding ) {
-			if (verbose) printf("Waiting for decoder thread to stop.\n");
-			usleep( 5000 );
-		}
-	
 		// Set the decoder running
-		set_state( MADJACK_STATE_LOADING );
 		start_decoder_thread( input_file );
 		
 	}
@@ -250,7 +243,11 @@ void do_stop()
 	    get_state() == MADJACK_STATE_PAUSED ||
 	    get_state() == MADJACK_STATE_READY )
 	{
+		// Store our new state
 		set_state( MADJACK_STATE_STOPPED );
+		
+		// Stop decoder thread
+		finish_decoder_thread();
 	}
 	else if (get_state() != MADJACK_STATE_STOPPED)
 	{
@@ -270,18 +267,15 @@ void do_eject()
 	    get_state() == MADJACK_STATE_PAUSED ||
 	    get_state() == MADJACK_STATE_READY)
 	{
-		set_state( MADJACK_STATE_STOPPED );
+		do_stop();
 	}
 	
 	if (get_state() == MADJACK_STATE_STOPPED ||
 	    get_state() == MADJACK_STATE_ERROR)
 	{
 
-		// Wait for decoder to finish
-		while( is_decoding ) {
-			if (verbose) printf("Waiting for decoder thread to stop.\n");
-			usleep( 5000 );
-		}
+		// Shut down decoder thread
+		finish_decoder_thread();
 
 		// Close the input file
 		if (input_file->file) {

@@ -80,9 +80,11 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			// Not enough samples ?
 			if (len < to_read) {
 				if (is_decoding) {
+					// If still decoding then something has gone wrong
 					fprintf(stderr, "Error: ringbuffer underrun, aborting playback.\n");
 				} else {
 					// Must have reached end of file
+					if (verbose) printf("Reached end of ringbuffer, playback has now stopped.\n");
 				}
 				
 				// Stop playback

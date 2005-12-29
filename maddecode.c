@@ -37,8 +37,9 @@
 
 
 // ------- Globals -------
-pthread_t decoder_thread;		// The decoder thread
-int is_decoding = 0;			// Set to 1 while thread is running
+pthread_t decoder_thread = NULL;	// The decoder thread
+int is_decoding = 0;				// Set to 1 while thread is running
+int terminate_decoder_thread = 0;	// Set to 1 to tell thread to stop
 
 
 /*
@@ -63,11 +64,9 @@ enum mad_flow callback_input(void *data,
 	if (feof(input->file))
 		return MAD_FLOW_STOP;
 		
-	// Check state and possibly abort
-	if (get_state() == MADJACK_STATE_STOPPED ||
-		get_state() == MADJACK_STATE_EMPTY ||
-		get_state() == MADJACK_STATE_QUIT)
-	return MAD_FLOW_STOP;
+	// Abort thread ?
+	if (terminate_decoder_thread)
+		return MAD_FLOW_STOP;
 	
 	// Any unused bytes left in buffer ?
 	if(stream->next_frame) {
@@ -112,12 +111,9 @@ enum mad_flow callback_output(void *data,
 	while( jack_ringbuffer_write_space( ringbuffer[0] )
 	          < (nsamples * sizeof(float) ) )
 	{
-	
-		// Check state and possibly abort
-		if (get_state() == MADJACK_STATE_STOPPED ||
-			get_state() == MADJACK_STATE_EMPTY ||
-			get_state() == MADJACK_STATE_QUIT)
-		return MAD_FLOW_STOP;
+		// Abort thread ?
+		if (terminate_decoder_thread)
+			return MAD_FLOW_STOP;
 
 		// If ringbuffer if full and we are still in LOADING state
 		// then we are ready for JACK to start emptying the ring-buffer
@@ -159,6 +155,10 @@ enum mad_flow callback_header(void *data,
 {
 	static int warned_vbr;
 	
+	// Abort thread ?
+	if (terminate_decoder_thread)
+		return MAD_FLOW_STOP;
+
 	//printf("samplerate of file: %d\n", header->samplerate);
 	if (jack_get_sample_rate( client ) != header->samplerate) {
 		fprintf(stderr, "Error: Sample rate of input file (%d) is different to JACK's (%d)\n",
@@ -231,16 +231,23 @@ enum mad_flow callback_error(void *data,
 static
 void *thread_decode_mad(void *input)
 {
-	struct mad_decoder decoder;
+	struct mad_decoder *decoder = NULL;
 	int result;
 
 	is_decoding = 1;
 
 	if (verbose) printf("Decoder thread started.\n");
+	
+	// Allocate memory for mad_decoder
+	decoder = malloc(sizeof( struct mad_decoder ));
+	if (!decoder) {
+		fprintf(stderr, "Error: failed to allocate memory for mad_decoder structure.\n");
+		exit(-1);
+	}
 
 	// Initalise the MAD decoder
 	mad_decoder_init(
-		&decoder,			// decoder structure
+		decoder,			// decoder structure
 		input, 				// data pointer 
 		callback_input,		// input callback
 		callback_header, 	// header callback
@@ -250,15 +257,19 @@ void *thread_decode_mad(void *input)
 		NULL 				// message callback
 	);
 
+	// Ignore CRC errors
+	mad_decoder_options(decoder, MAD_OPTION_IGNORECRC);
+	
 	// Start new thread for this:
-	result = mad_decoder_run(&decoder, MAD_DECODER_MODE_SYNC);
+	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
 	if (result) {
 		fprintf(stderr, "Warning: mad_decoder_run returned %d\n", result);
 	}
 
 	// Shut down decoder
-	mad_decoder_finish( &decoder );
-
+	mad_decoder_finish( decoder );
+	free( decoder );
+	
 	if (verbose) printf("Decoder thread exiting.\n");
 
 	// If we got here while loading, then something went wrong
@@ -327,8 +338,18 @@ static void seek_start_mpeg_audio( FILE* file )
 void start_decoder_thread(void *data)
 {
 	input_file_t *input = data;
-	int result; 
+	int result;
 	
+	// Cancel the previous thread
+	finish_decoder_thread();
+
+
+	// Go to Loading state
+	set_state( MADJACK_STATE_LOADING );
+	
+	// Signal the thread to run
+	terminate_decoder_thread = 0;
+
 	// Reset the position in track
 	position = 0.0;
 	
@@ -355,10 +376,17 @@ void start_decoder_thread(void *data)
 
 void finish_decoder_thread()
 {
+	// Signal the thread to terminate
+	terminate_decoder_thread = 1;
 
-	while( is_decoding ) {
-		if (verbose) printf("Waiting for decoder thread to finish.\n");
-		sleep( 1 );
+	if (decoder_thread) {
+		if (verbose && is_decoding)
+			printf("Waiting for decoder thread to finish.\n");
+		
+		// pthread_join waits for thread to terminate 
+		// and then releases the thread's resources
+		pthread_join( decoder_thread, NULL );
+		decoder_thread = NULL;
 	}
 
 }
