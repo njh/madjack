@@ -168,7 +168,7 @@ void init_jack( const char* client_name, jack_options_t jack_opt )
 
 	// Register with Jack
 	if ((client = jack_client_open(client_name, jack_opt, &status)) == 0) {
-		fprintf(stderr, "Failed to start jack client: %d\n", status);
+		fprintf(stderr, "Failed to start jack client: 0x%x\n", status);
 		exit(1);
 	}
 	if (!quiet) printf("JACK client registered as '%s'.\n", jack_get_client_name( client ) );
