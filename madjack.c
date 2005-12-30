@@ -160,14 +160,14 @@ void autoconnect_jack_ports( jack_client_t* client )
 
 
 static
-void init_jack( const char* client_name ) 
+void init_jack( const char* client_name, jack_options_t jack_opt ) 
 {
 	jack_status_t status;
 	size_t ringbuffer_size = 0;
 	int i;
 
 	// Register with Jack
-	if ((client = jack_client_open(client_name, JackNullOption, &status)) == 0) {
+	if ((client = jack_client_open(client_name, jack_opt, &status)) == 0) {
 		fprintf(stderr, "Failed to start jack client: %d\n", status);
 		exit(1);
 	}
@@ -325,8 +325,9 @@ void usage()
 	printf("   -l <port>     Connect left output to this input port\n");
 	printf("   -r <port>     Connect right output to this input port\n");
 	printf("   -n <name>     Name for this JACK client\n");
-	printf("   -p <port>     Enable LibLO and set port\n");
+	printf("   -j            Don't automatically start jackd\n");
 	printf("   -d <dir>      Set root directory for audio files\n");
+	printf("   -p <port>     Enable LibLO and set port\n");
 	printf("   -R <secs>     Set duration of ringbuffer (in seconds)\n");
 	printf("   -v            Enable verbose mode\n");
 	printf("   -q            Enable quiet mode\n");
@@ -339,6 +340,7 @@ void usage()
 int main(int argc, char *argv[])
 {
 	int autoconnect = 0;
+	jack_options_t jack_opt = JackNullOption;
 	char *client_name = DEFAULT_CLIENT_NAME;
 	char *connect_left = NULL;
 	char *connect_right = NULL;
@@ -348,14 +350,15 @@ int main(int argc, char *argv[])
 
 
 	// Parse Switches
-	while ((opt = getopt(argc, argv, "al:r:n:d:p:R:vqh")) != -1) {
+	while ((opt = getopt(argc, argv, "al:r:n:jd:p:R:vqh")) != -1) {
 		switch (opt) {
 			case 'a':  autoconnect = 1; break;
 			case 'l':  connect_left = optarg; break;
 			case 'r':  connect_right = optarg; break;
+			case 'n':  client_name = optarg; break;
+			case 'j':  jack_opt |= JackNoStartServer; break;
 			case 'd':  root_directory = optarg; break;
 			case 'p':  port = optarg; break;
-			case 'n':  client_name = optarg; break;
 			case 'R':  rb_duration = atof(optarg); break;
 			case 'v':  verbose = 1; break;
 			case 'q':  quiet = 1; break;
@@ -379,7 +382,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Initialise JACK
-	init_jack( client_name );
+	init_jack( client_name, jack_opt );
 
 	// Initialse Input File Data Structure
 	input_file = init_inputfile();

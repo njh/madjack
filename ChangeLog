@@ -33,4 +33,4 @@ Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
   * Bugfix for playing tracks shorter than the length of the ringbuffer
   * Must now be either in READY or PAUSED states to enter PLAYING state
   * Now allow changing to STOPPED from from state LOADING
- 
+  * Added option to disable automatically starting jackd
