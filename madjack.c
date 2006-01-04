@@ -327,7 +327,7 @@ void usage()
 	printf("   -n <name>     Name for this JACK client\n");
 	printf("   -j            Don't automatically start jackd\n");
 	printf("   -d <dir>      Set root directory for audio files\n");
-	printf("   -p <port>     Enable LibLO and set port\n");
+	printf("   -p <port>     Specify port to listen for OSC messages on\n");
 	printf("   -R <secs>     Set duration of ringbuffer (in seconds)\n");
 	printf("   -v            Enable verbose mode\n");
 	printf("   -q            Enable quiet mode\n");
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
 	char *connect_left = NULL;
 	char *connect_right = NULL;
 	lo_server_thread osc_thread = NULL;
-	char *port = NULL;
+	char *osc_port = NULL;
 	int opt;
 
 
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 			case 'n':  client_name = optarg; break;
 			case 'j':  jack_opt |= JackNoStartServer; break;
 			case 'd':  root_directory = optarg; break;
-			case 'p':  port = optarg; break;
+			case 'p':  osc_port = optarg; break;
 			case 'R':  rb_duration = atof(optarg); break;
 			case 'v':  verbose = 1; break;
 			case 'q':  quiet = 1; break;
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Initialise LibLO
-	if (port) osc_thread = init_osc( port );
+	osc_thread = init_osc( osc_port );
 
 	// Setup signal handlers
 	signal(SIGTERM, termination_handler);

@@ -34,4 +34,6 @@ Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
   * Must now be either in READY or PAUSED states to enter PLAYING state
   * Now allow changing to STOPPED from the state LOADING
   * Added option to disable automatically starting jackd
+  * Now connects madjack to random OSC port (instead of none)
+
 
