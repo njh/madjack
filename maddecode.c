@@ -40,6 +40,7 @@
 pthread_t decoder_thread;   		// The decoder thread
 int bitrate = 0;                    // The bitrate of the MPEG Audio (in kbps)
 int is_decoding = 0;                // Set to 1 while thread is running
+int decoder_thread_exists = 0;		// Set if decoder thread has been created
 int terminate_decoder_thread = 0;   // Set to 1 to tell thread to stop
 
 // Mutex to make sure we don't stop/start decoder thread simultaneously
@@ -368,8 +369,8 @@ void start_decoder_thread(void *data)
 	pthread_mutex_lock( &decoder_thread_control );
 	
 	// Sanity check
-	if (is_decoding) {
-		fprintf(stderr, "Bad bad bad: still decoding while trying to start thread.\n");
+	if (decoder_thread_exists) {
+		fprintf(stderr, "Bad bad bad: decoder thread already exists while trying to start thread.\n");
 		exit(-1);
 	}
 
@@ -401,6 +402,9 @@ void start_decoder_thread(void *data)
 	if (result) {
 		fprintf(stderr, "Error: return code from pthread_create() is %d\n", result);
 		exit(-1);
+	} else {
+		// A thread has been created that will later need disposed of
+		decoder_thread_exists = 1;
 	}
 
 	pthread_mutex_unlock( &decoder_thread_control );
@@ -413,7 +417,7 @@ void finish_decoder_thread()
 	// start or stop the decoder thread
 	pthread_mutex_lock( &decoder_thread_control );
 
-	if (is_decoding) {
+	if (decoder_thread_exists) {
 		int result;
 	
 		// Signal the thread to terminate
@@ -425,8 +429,10 @@ void finish_decoder_thread()
 		// pthread_join waits for thread to terminate 
 		// and then releases the thread's resources
 		result = pthread_join( decoder_thread, NULL );
-		if (result && verbose) {
+		if (result) {
 			fprintf(stderr, "Warning: pthread_join() failed: %s\n", strerror(result));
+		} else {
+			decoder_thread_exists = 0;
 		}
 	}
 	
