@@ -37,7 +37,7 @@
 
 
 // ------- Globals -------
-pthread_t decoder_thread = NULL;    // The decoder thread
+pthread_t decoder_thread;   		// The decoder thread
 int bitrate = 0;                    // The bitrate of the MPEG Audio (in kbps)
 int is_decoding = 0;                // Set to 1 while thread is running
 int terminate_decoder_thread = 0;   // Set to 1 to tell thread to stop
@@ -368,8 +368,8 @@ void start_decoder_thread(void *data)
 	pthread_mutex_lock( &decoder_thread_control );
 	
 	// Sanity check
-	if (decoder_thread) {
-		fprintf(stderr, "Bad bad bad: decoder_thread is non-NULL while trying to start thread.\n");
+	if (is_decoding) {
+		fprintf(stderr, "Bad bad bad: still decoding while trying to start thread.\n");
 		exit(-1);
 	}
 
@@ -413,7 +413,7 @@ void finish_decoder_thread()
 	// start or stop the decoder thread
 	pthread_mutex_lock( &decoder_thread_control );
 
-	if (decoder_thread) {
+	if (is_decoding) {
 		int result;
 	
 		// Signal the thread to terminate
@@ -425,11 +425,8 @@ void finish_decoder_thread()
 		// pthread_join waits for thread to terminate 
 		// and then releases the thread's resources
 		result = pthread_join( decoder_thread, NULL );
-		if (result) {
-			if (verbose)
-				fprintf(stderr, "Warning: pthread_join() failed: %s\n", strerror(result));
-		} else {
-			decoder_thread = NULL;
+		if (result && verbose) {
+			fprintf(stderr, "Warning: pthread_join() failed: %s\n", strerror(result));
 		}
 	}
 	
