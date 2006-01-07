@@ -348,6 +348,8 @@ int main(int argc, char *argv[])
 	char *osc_port = NULL;
 	int opt;
 
+	// Make STDOUT unbuffered
+	setbuf(stdout, NULL);
 
 	// Parse Switches
 	while ((opt = getopt(argc, argv, "al:r:n:jd:p:R:vqh")) != -1) {
