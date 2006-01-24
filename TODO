@@ -3,9 +3,7 @@ MadJACK TODO List
 
 In order of priority:
  
- - Sort out evil multiple control threads problem :(
-     - problems with changing state at same time from
-       different threads
+ - Add get_error message for when in state ERROR
        
  - Add Jack Transport support
 
@@ -25,6 +23,8 @@ In order of priority:
  - make pause/play smoother (rapid fade?)
  
  - adjust playback speed
+
+ - simple GUI
 
 
 
