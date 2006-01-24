@@ -29,5 +29,5 @@ In order of priority:
 
 
  - Add support for other formats
-   (libsndfile, Ogg Vorbis, FLAC...)
+   (libsndfile, CD Player?, Ogg Vorbis, FLAC...)
   
