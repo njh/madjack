@@ -33,6 +33,7 @@
 #define READ_BUFFER_SIZE		(2048)
 #define DEFAULT_CLIENT_NAME		"madjack"
 #define MAX_FILENAME_LEN		(255)
+#define MAX_ERRORSTR_LEN		(255)
 
 
 enum madjack_state {
@@ -63,6 +64,7 @@ extern jack_ringbuffer_t *ringbuffer[2];
 extern jack_client_t *client;
 extern input_file_t *input_file;
 extern char * root_directory;
+extern char error_string[MAX_ERRORSTR_LEN];
 extern int verbose;
 extern int quiet;
 extern float position;
@@ -74,6 +76,7 @@ extern float cuepoint;
 enum madjack_state get_state();
 void set_state( enum madjack_state new_state );
 const char* get_state_name( enum madjack_state state );
+void error_handler( char *fmt, ... );
 
 
 #endif

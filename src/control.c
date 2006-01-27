@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <termios.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "control.h"
 #include "madjack.h"
@@ -314,16 +315,16 @@ void do_load( const char* filepath )
 		
 		// Open the new file
 		input_file->file = fopen( fullpath, "r" );
-		free( fullpath );
 		if (input_file->file==NULL) {
-			perror("Failed to open input file");
-			set_state( MADJACK_STATE_ERROR );
+			error_handler( "%s: %s", strerror( errno ), fullpath);
+			free( fullpath );
 			return;
 		}
 		
 		// Copy string
 		input_file->filepath = strdup( filepath );
-		
+		free( fullpath );
+
 		// Extract the filename (minus extension) from the path
 		extract_filename( input_file );
 		
@@ -336,6 +337,7 @@ void do_load( const char* filepath )
 	}
 	
 }
+
 
 // Quit MadJack
 void do_quit()

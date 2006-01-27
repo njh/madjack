@@ -31,6 +31,8 @@
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <getopt.h>
+#include <errno.h>
+#include <stdarg.h>
 
 
 #include "control.h"
@@ -55,6 +57,7 @@ float cuepoint = 0.0;				// Cue point of track (seconds)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
 float rb_duration = DEFAULT_RB_LEN;	// Duration of ring buffer (in seconds)
+char error_string[MAX_ERRORSTR_LEN] = "\0";	// Last error that occurred 
 
 
 
@@ -80,14 +83,13 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			if (len < to_read) {
 				if (is_decoding) {
 					// If still decoding then something has gone wrong
-					fprintf(stderr, "Error: ringbuffer underrun, aborting playback.\n");
+					error_handler( "Audio Ringbuffer underrun" );
 				} else {
 					// Must have reached end of file
 					if (verbose) printf("Reached end of ringbuffer, playback has now stopped.\n");
+					set_state( MADJACK_STATE_STOPPED );
 				}
 				
-				// Stop playback
-				set_state( MADJACK_STATE_STOPPED );
 			}
 			
 			// Increment the position in the track
@@ -278,6 +280,30 @@ termination_handler (int signum)
 	
 	signal(signum, termination_handler);
 }
+
+
+// Handle an error and store the error message
+void error_handler( char *fmt, ... )
+{
+	va_list args;
+	va_start( args, fmt );
+	
+	// Set current state to error
+	set_state( MADJACK_STATE_ERROR );
+
+	// Display the error message
+	fprintf( stderr, "[ERROR] " );
+	vfprintf( stderr, fmt, args );
+	fprintf(stderr, "\n" );
+	
+	// Store the error message
+	vsnprintf( error_string, MAX_ERRORSTR_LEN, fmt, args );
+	va_end( args );
+
+	// Terminate the decoder
+	finish_decoder_thread();
+}
+
 
 
 const char* get_state_name( enum madjack_state state )

@@ -64,7 +64,7 @@ enum mad_flow callback_input(void *data,
 	
 	// No file open ?
 	if (input->file==NULL) {
-		fprintf(stderr, "Error: no file is NULL in callback_input()\n");
+		error_handler( "File is NULL in callback_input()" );
 		return MAD_FLOW_BREAK;
 	}
 
@@ -74,7 +74,7 @@ enum mad_flow callback_input(void *data,
 		if (get_state()==MADJACK_STATE_LOADING) {
 			// Anything in the ringbuffer ?
 			if (jack_ringbuffer_read_space( ringbuffer[0] ) == 0) {
-				fprintf(stderr, "Error: got to end of input file before putting any audio in the ringbuffer.\n");
+				error_handler( "Got to end of input file before putting any audio in the ringbuffer" );
 				return MAD_FLOW_BREAK;
 			} else {
 				set_state( MADJACK_STATE_READY );
@@ -179,8 +179,8 @@ enum mad_flow callback_header(void *data,
 
 	//printf("samplerate of file: %d\n", header->samplerate);
 	if (jack_get_sample_rate( client ) != header->samplerate) {
-		fprintf(stderr, "Error: Sample rate of input file (%d) is different to JACK's (%d)\n",
-				header->samplerate, jack_get_sample_rate( client ) );
+		error_handler( "Sample rate of input file (%d) is different to JACK's (%d)", 
+						header->samplerate, jack_get_sample_rate( client ) );
 		
 		return MAD_FLOW_BREAK;
 	}
@@ -228,11 +228,13 @@ enum mad_flow callback_error(void *data,
 		
 		
 		default:
-			if (MAD_RECOVERABLE (stream->error))
-				 fprintf(stderr, "Warning: ");
-			else fprintf(stderr, "Error: ");
-			fprintf(stderr, "libmad decoding error: 0x%04x (%s)\n",
-				stream->error, mad_stream_errorstr(stream));
+			if (MAD_RECOVERABLE (stream->error)) {
+				fprintf(stderr, "Warning: libmad decoding error: 0x%04x (%s)\n",
+					stream->error, mad_stream_errorstr(stream));
+			} else {
+				error_handler("libmad decoding error: 0x%04x (%s)\n",
+					stream->error, mad_stream_errorstr(stream));
+			}
 		break;	
 	}
 	

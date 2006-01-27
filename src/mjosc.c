@@ -36,7 +36,7 @@
 
 
 static
-void error_handler(int num, const char *msg, const char *path)
+void osc_error_handler(int num, const char *msg, const char *path)
 {
     fprintf(stderr, "LibLO server error %d in path %s: %s\n", num, path, msg);
     fflush(stdout);
@@ -189,6 +189,21 @@ int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
 }
 
 static
+int get_error_handler(const char *path, const char *types, lo_arg **argv, int argc,
+		 lo_message msg, void *user_data)
+{
+	lo_address src = lo_message_get_source( msg );
+	lo_server serv = (lo_server)user_data;
+	int result;
+	
+	// Send back reply
+	result = lo_send_from( src, serv, LO_TT_IMMEDIATE, "/error", "s", error_string );
+	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
+
+    return 0;
+}
+
+static
 int wildcard_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 lo_message msg, void *user_data)
 {
@@ -207,7 +222,7 @@ lo_server_thread init_osc( char *port )
 	lo_server serv = NULL;
 	
 	// Create new server
-	st = lo_server_thread_new( port, error_handler );
+	st = lo_server_thread_new( port, osc_error_handler );
 	if (!st) return NULL;
 	
 	// Add the methods
@@ -222,6 +237,7 @@ lo_server_thread init_osc( char *port )
 	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_filepath", "", filepath_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_filename", "", filename_handler, serv);
+	lo_server_thread_add_method( st, "/get_error", "", get_error_handler, serv);
 	lo_server_thread_add_method( st, "/ping", "", ping_handler, serv);
 
     // add method that will match any path and args
