@@ -49,12 +49,22 @@ enum madjack_state {
 
 
 typedef struct input_file_struct {
-	unsigned char* buffer;
-	unsigned int buffer_size;
-	unsigned int buffer_used;
+	unsigned char* buffer;			// MPEG Audio Read buffer
+	unsigned int buffer_size;		// Total length of read buffer
+	unsigned int buffer_used;		// Amount of buffer currently used
+	
 	FILE* file;
-	char* filepath;
-	char filename[MAX_FILENAME_LEN];
+	char* filepath;						// Path to the audio file
+	char filename[MAX_FILENAME_LEN];	// Filename without the path
+	unsigned long start_pos;			// First byte of MPEG audio
+	unsigned long end_pos;				// Last byte of MPEG audio
+	
+	float position;						// Current postion of playback (in seconds)
+	float duration;						// Total duration of file (in seconds)
+	float cuepoint;						// Position of cuepoint (in seconds)
+	
+	int bitrate;						// Bitrate of the input file (in kbps)
+
 } input_file_t;
 
 
@@ -67,9 +77,6 @@ extern char * root_directory;
 extern char error_string[MAX_ERRORSTR_LEN];
 extern int verbose;
 extern int quiet;
-extern float position;
-extern float duration;
-extern float cuepoint;
 
 
 // ------- Prototypes -------

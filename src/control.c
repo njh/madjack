@@ -275,8 +275,10 @@ void do_eject()
 			input_file->filename[0] = '\0';
 		}
 		
-		// Reset position
-		position = 0.0;
+		// Reset positions
+		input_file->position = 0.0;
+		input_file->duration = 0.0;
+		input_file->cuepoint = 0.0;
 
 		// Deck is now empty
 		set_state( MADJACK_STATE_EMPTY );
@@ -422,8 +424,9 @@ void handle_keypresses()
 	while (get_state() != MADJACK_STATE_QUIT) {
 
 		// Display position
-		if (!quiet && isatty(STDOUT_FILENO))
-			printf("[%1.1f]    \r", position);
+		if (!quiet && isatty(STDOUT_FILENO)) {
+			printf("[%1.1f/%1.1f]         \r", input_file->position, input_file->duration);
+		}
 
 		// Set timeout to 1/10 second
 		timeout.tv_sec = 0;

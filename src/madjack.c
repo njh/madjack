@@ -51,9 +51,6 @@ jack_client_t *client = NULL;
 input_file_t *input_file = NULL;	// Input file info structure
 int state = MADJACK_STATE_EMPTY;	// State of MadJACK
 char * root_directory = "";			// Root directory (files loaded relative to this)
-float position = 0.0;				// Position in track (seconds)
-float duration = 0.0;				// Duration of track (seconds)
-float cuepoint = 0.0;				// Cue point of track (seconds)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
 float rb_duration = DEFAULT_RB_LEN;	// Duration of ring buffer (in seconds)
@@ -93,7 +90,7 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 			}
 			
 			// Increment the position in the track
-			if (c==0) position += ((float)nframes / jack_get_sample_rate( client ));
+			if (c==0) input_file->position += ((float)nframes / jack_get_sample_rate( client ));
 		}
 		
 		// If we don't have enough audio, fill it up with silence
@@ -300,8 +297,6 @@ void error_handler( char *fmt, ... )
 	vsnprintf( error_string, MAX_ERRORSTR_LEN, fmt, args );
 	va_end( args );
 
-	// Terminate the decoder
-	finish_decoder_thread();
 }
 
 

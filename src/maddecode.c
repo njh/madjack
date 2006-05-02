@@ -38,7 +38,6 @@
 
 // ------- Globals -------
 pthread_t decoder_thread;   		// The decoder thread
-int bitrate = 0;                    // The bitrate of the MPEG Audio (in kbps)
 int is_decoding = 0;                // Set to 1 while thread is running
 int decoder_thread_exists = 0;		// Set if decoder thread has been created
 int terminate_decoder_thread = 0;   // Set to 1 to tell thread to stop
@@ -74,7 +73,7 @@ enum mad_flow callback_input(void *data,
 		if (get_state()==MADJACK_STATE_LOADING) {
 			// Anything in the ringbuffer ?
 			if (jack_ringbuffer_read_space( ringbuffer[0] ) == 0) {
-				error_handler( "Got to end of input file before putting any audio in the ringbuffer" );
+				error_handler( "Got to end of input file before putting any audio in the ringbuffer." );
 				return MAD_FLOW_BREAK;
 			} else {
 				set_state( MADJACK_STATE_READY );
@@ -171,6 +170,7 @@ static
 enum mad_flow callback_header(void *data,
 		struct mad_header const *header)
 {
+	input_file_t *input = data;
 	static int warned_vbr;
 	
 	// Abort thread ?
@@ -186,11 +186,17 @@ enum mad_flow callback_header(void *data,
 	}
 	
 	// Check to see if bitrate has changed
-	if (bitrate==0) {
-		bitrate = header->bitrate;
+	if (input->bitrate==0) {
+		input->bitrate = header->bitrate;
+		input->duration = (((float)(input->end_pos - input->start_pos) * 8) / input->bitrate);
 		warned_vbr=0;
-		if (verbose) printf( "Bitrate: %d kbps.\n", bitrate );
-	} else if (bitrate != header->bitrate) {
+		
+		if (verbose) {
+			printf( "Bitrate: %d kbps.\n", input->bitrate );
+			printf( "Duration: %1.1f seconds.\n", input->duration );
+		}
+		
+	} else if (input->bitrate != header->bitrate) {
 		if (!warned_vbr) {
 			fprintf(stderr, "Warning: Bitrate changed during decoding, VBR is not recommended.\n");
 			warned_vbr=1;
@@ -280,7 +286,7 @@ void *thread_decode_mad(void *input)
 
 	// Start new thread for this:
 	result = mad_decoder_run(decoder, MAD_DECODER_MODE_SYNC);
-	if (result) {
+	if (result && get_state() != MADJACK_STATE_ERROR) {
 		fprintf(stderr, "Warning: mad_decoder_run returned %d\n", result);
 	}
 
@@ -295,7 +301,7 @@ void *thread_decode_mad(void *input)
 	if (get_state() == MADJACK_STATE_LOADING &&
 	    terminate_decoder_thread == 0)
 	{
-		set_state( MADJACK_STATE_ERROR );
+		error_handler( "Decoder thread stopped during loading." );
 	}
 
 	is_decoding = 0;
@@ -305,23 +311,20 @@ void *thread_decode_mad(void *input)
 
 
 
-// Seek to the start of the MPEG audio in the file
-static void seek_start_mpeg_audio( FILE* file )
-{
-	char bytes[ID3v2_HEADER_LEN];
 
-	// Seek to very start of file
-	fseek( file, 0, SEEK_SET);
-	
-	
+static 
+int parse_id3v2_header( FILE* file ) {
+	char bytes[ID3v2_HEADER_LEN];
+	unsigned int length = 0;
+
 	// Read in (possible) ID3v2 header
 	bzero( bytes, ID3v2_HEADER_LEN );
 	fread( bytes, ID3v2_HEADER_LEN, 1, file);
 	
 	
 	// Is there an ID3v2 header there ?
-	if (bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3') {
-		unsigned int length = 0;
+	if ((bytes[0] == 'I' && bytes[1] == 'D' && bytes[2] == '3') ||
+	    (bytes[0] == '3' && bytes[1] == 'D' && bytes[2] == 'I')) {
 		int ver_major = bytes[3];
 		int ver_minor = bytes[4];
 	
@@ -337,22 +340,75 @@ static void seek_start_mpeg_audio( FILE* file )
 		// Check flag to see if footer is present
 		if (bytes[6] & 0x10)
 			length += ID3v2_FOOTER_LEN;
-		
-		if (verbose) printf("Found ID3 v2.%d.%d header at start of file (0x%x bytes).\n",
+
+		if (verbose) printf("Found ID3 v2.%d.%d header in file (0x%x bytes long).\n",
 				ver_major, ver_minor, length);
-
-		// Seek to end of ID3 headers
-		fseek( file, length, SEEK_SET);
-		
-	} else {
-		if (verbose) printf("No ID3v2 header found at start of file.\n");
-
-		// Just seek back to the start
-		fseek( file, 0, SEEK_SET);
+	
 	}
-
+	
+	return length;
 }
 
+
+static 
+int parse_id3v1_header( FILE* file ) {
+	char bytes[ID3v1_HEADER_LEN];
+
+	// Read in (possible) ID3v1 header
+	bzero( bytes, ID3v1_HEADER_LEN );
+	fread( bytes, ID3v1_HEADER_LEN, 1, file);
+	
+	
+	// Is there an ID3v2 header there ?
+	if (bytes[0] == 'T' && bytes[1] == 'A' && bytes[2] == 'G') {
+		if (verbose) printf("Found ID3 v1 header in file (0x80 bytes long).\n");
+		return 0x80;
+	} else {
+		return 0;
+	}
+}
+
+
+// Set the first and last byte positions of the audio
+// and set the duration of the audio file
+// (hunts down ID3 tags and ignores them)
+static void mpeg_audio_length( input_file_t *input )
+{
+	FILE* file = input_file->file;
+
+	/*
+		ID3v1: Look for the marker "TAG" 128 bytes from the end of the file.
+		ID3v2: Look for the marker "ID3" in the first 3 bytes of the file.
+		ID3v2.4:  Look for the marker "3DI" 10 bytes from the end of the file,   
+				  or 10 bytes before the beginning of an ID3v1 tag.
+	*/
+	
+	// Seek to very start of file
+	rewind( file );
+	input->start_pos = parse_id3v2_header( file );
+	if (input->start_pos == 0) {
+		if (verbose) printf("No ID3v2 header found at start of file.\n");
+	}
+
+
+	// Seek to the very end of the file
+	fseek( file, 0, SEEK_END);
+	input->end_pos = ftell( file );
+	
+	// Check for an ID3v1 header at end of file
+	fseek( file, input->end_pos-128, SEEK_SET);
+	input->end_pos -= parse_id3v1_header( file );
+	
+	// Check for an ID3v2 header at end of file
+	fseek( file, input->end_pos-10, SEEK_SET);
+	input->end_pos -= parse_id3v2_header( file );
+
+
+	// Set the duration of the file
+
+	// Seek to the start of the audio
+	fseek( file, input->start_pos, SEEK_SET);
+}
 
 
 
@@ -383,20 +439,22 @@ void start_decoder_thread(void *data)
 	terminate_decoder_thread = 0;
 
 	// Reset the position in track
-	position = 0.0;
+	input_file->position = 0.0;
+	input_file->duration = 0.0;
+	input_file->cuepoint = 0.0;
 	
 	// Empty out the read buffer
 	input->buffer_used = 0;
 	
 	// Reset the bitrate
-	bitrate = 0;
+	input_file->bitrate = 0;
 	
 	// Empty out ringbuffers
 	jack_ringbuffer_reset( ringbuffer[0] );
 	jack_ringbuffer_reset( ringbuffer[1] );
 	
-	// Seek to start of file (after ID3 tag)
-	seek_start_mpeg_audio( input_file->file );
+	// Get the length/start of the audio in the file (after ID3 tag)
+	mpeg_audio_length( input_file );
 
 		
 	// Start the decoder thread

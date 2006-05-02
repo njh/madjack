@@ -29,6 +29,7 @@
 // Constants
 #define ID3v2_HEADER_LEN	(10)
 #define ID3v2_FOOTER_LEN	(10)
+#define ID3v1_HEADER_LEN	(3)
 
 
 // Gobals

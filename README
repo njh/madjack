@@ -76,6 +76,14 @@ OSC Interface
     STOPPED          - At end of track / Stopped
     ERROR            - Problem opening/decoding track
     EMPTY            - No track loaded in deck
+
+ /deck/get_error     - Get description of error (when in state ERROR)
+  replies with:
+ /deck/error (s)
+
+ /deck/get_version   - Get name and version number of MadJACK
+  replies with:
+ /deck/version (ss)
  
  /deck/get_position  - Get deck position (in seconds)
   replies with:

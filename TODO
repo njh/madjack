@@ -3,14 +3,10 @@ MadJACK TODO List
 
 In order of priority:
  
- - Add get_error message for when in state ERROR
-       
  - Add Jack Transport support
 
  - Write manpages for madjack and madjack-remote
  
- - calculate duration of tracks
-   (seconds = (bytes * 8) / bitrate / 10)
  
  - allow changing of cue point
 
