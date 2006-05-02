@@ -1,6 +1,27 @@
-Mon Dec 5 23:42:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+Tue May  2 01:37:07 BST 2006 Nicholas J. Humfrey <njh@aelius.com>
 
-  * Initial Release (version 0.1)
+  * Added support for /get_error   (returns error message when state=ERROR)
+  * Added support for /get_version (returns package name and version)
+  * Added support for /deck/get_duration (returns duration of track in seconds)
+
+
+Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+
+  * New Release (version 0.4)
+  * Improvements to decoder thread handling
+  * Fixed bug where bitrate was not reset when loading a new file
+  * Bugfix for playing tracks shorter than the length of the ringbuffer
+  * Must now be either in READY or PAUSED states to enter PLAYING state
+  * Now allow changing to STOPPED from the state LOADING
+  * Added option to disable automatically starting jackd
+  * Now connects madjack to random OSC port (instead of none)
+  * Made STDOUT unbuffered
+
+
+Tue Dec 27 22:49:39 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+
+  * New Release (version 0.3)
+  * Bug fix for Linux - need to set timeout every time before select()
 
 
 Fri Dec 23 19:31:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
@@ -19,22 +40,7 @@ Fri Dec 23 19:31:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
   * Reduced time display to 10 updates per second
 
 
-Tue Dec 27 22:49:39 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
+Mon Dec 5 23:42:24 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
 
-  * New Release (version 0.3)
-  * Bug fix for Linux - need to set timeout every time before select()
-
-
-Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
-
-  * New Release (version 0.4)
-  * Improvements to decoder thread handling
-  * Fixed bug where bitrate was not reset when loading a new file
-  * Bugfix for playing tracks shorter than the length of the ringbuffer
-  * Must now be either in READY or PAUSED states to enter PLAYING state
-  * Now allow changing to STOPPED from the state LOADING
-  * Added option to disable automatically starting jackd
-  * Now connects madjack to random OSC port (instead of none)
-  * Made STDOUT unbuffered
-
+  * Initial Release (version 0.1)
 
