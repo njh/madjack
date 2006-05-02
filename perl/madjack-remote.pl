@@ -16,6 +16,7 @@ exit(-1) unless (defined $madjack);
 
 # Display the URL of the MadJACK deck we connected to
 print "URL of madjack server: ".$madjack->get_url()."\n";
+print "MadJACK server version: ".$madjack->get_version()."\n";
 
 
 # Change terminal mode

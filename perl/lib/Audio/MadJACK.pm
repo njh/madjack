@@ -27,6 +27,9 @@ sub new {
     my $self = { 
     	pong => 0,
     	state => undef,
+    	version => undef,
+    	error => undef,
+    	duration => undef,
     	position => undef,
     	filename => undef,
     	filepath => undef
@@ -49,9 +52,12 @@ sub new {
     
     # Add reply handlers
     $self->{lo}->add_method( '/deck/state', 's', \&_state_handler, $self );
+    $self->{lo}->add_method( '/deck/duration', 'd', \&_duration_handler, $self );
     $self->{lo}->add_method( '/deck/position', 'd', \&_position_handler, $self );
     $self->{lo}->add_method( '/deck/filename', 's', \&_filename_handler, $self );
     $self->{lo}->add_method( '/deck/filepath', 's', \&_filepath_handler, $self );
+    $self->{lo}->add_method( '/version', 's', \&_version_handler, $self );
+    $self->{lo}->add_method( '/error', 's', \&_error_handler, $self );
     $self->{lo}->add_method( '/pong', '', \&_pong_handler, $self );
     
     # Check MadJACK server is there
@@ -109,6 +115,19 @@ sub _state_handler {
 	return 0; # Success
 }
 
+sub get_duration {
+	my $self=shift;
+	$self->{duration} = undef;
+	$self->_wait_reply( '/deck/get_duration' );
+	return $self->{duration};
+}
+
+sub _duration_handler {
+	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
+	$userdata->{duration}=$params[0];
+	return 0; # Success
+}
+
 sub get_position {
 	my $self=shift;
 	$self->{postion} = undef;
@@ -145,6 +164,33 @@ sub get_filepath {
 sub _filepath_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
 	$userdata->{filepath}=$params[0];
+	return 0; # Success
+}
+
+sub get_version {
+	my $self=shift;
+	$self->{version} = undef;
+	$self->_wait_reply( '/version' );
+	return $self->{version};
+}
+
+sub _version_handler {
+	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
+	$userdata->{version}=$params[1];
+	return 0; # Success
+}
+
+
+sub get_error {
+	my $self=shift;
+	$self->{error} = undef;
+	$self->_wait_reply( '/error' );
+	return $self->{error};
+}
+
+sub _error_handler {
+	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
+	$userdata->{error}=$params[0];
 	return 0; # Success
 }
 
@@ -310,6 +356,21 @@ Returns one of the following strings:
    - STOPPED
    - EMPTY
    - ERROR
+   
+If no reply if received from the server or there is an error then 
+C<undef> is returned.
+
+=item B<get_error()>
+
+Returns the a string describing the current error (if state is ERROR).
+
+=item B<get_version()>
+
+Returns the version number of the MadJACK server.
+
+=item B<get_duration()>
+
+Returns the durtion (in seconds) of the current track. 
    
 If no reply if received from the server or there is an error then 
 C<undef> is returned.
