@@ -85,12 +85,15 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 					// Must have reached end of file
 					if (verbose) printf("Reached end of ringbuffer, playback has now stopped.\n");
 					set_state( MADJACK_STATE_STOPPED );
+					input_file->position = input_file->duration;
 				}
 				
 			}
 			
 			// Increment the position in the track
-			if (c==0) input_file->position += ((float)nframes / jack_get_sample_rate( client ));
+			if (c==0 && get_state() == MADJACK_STATE_PLAYING) {
+					input_file->position += ((float)nframes / jack_get_sample_rate( client ));
+			}
 		}
 		
 		// If we don't have enough audio, fill it up with silence
