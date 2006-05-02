@@ -404,8 +404,6 @@ static void mpeg_audio_length( input_file_t *input )
 	input->end_pos -= parse_id3v2_header( file );
 
 
-	// Set the duration of the file
-
 	// Seek to the start of the audio
 	fseek( file, input->start_pos, SEEK_SET);
 }
