@@ -1,5 +1,8 @@
 Revision history for MadJACK perl interface
 
+0.03  Fri Apr 21 22:51:47 BST 2006
+	Added Makefile.PL
+
 0.02  Fri Dec 23 13:31:08 GMT 2005
 	Now performs limited checks to ensure that messages are recieved
 	Minor corrections to documentation
