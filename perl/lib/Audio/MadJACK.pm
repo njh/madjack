@@ -14,7 +14,7 @@ use strict;
 
 use vars qw/$VERSION $ATTEMPTS/;
 
-$VERSION="0.03";
+$VERSION="0.04";
 $ATTEMPTS=5;
 
 
@@ -56,7 +56,7 @@ sub new {
     $self->{lo}->add_method( '/deck/position', 'd', \&_position_handler, $self );
     $self->{lo}->add_method( '/deck/filename', 's', \&_filename_handler, $self );
     $self->{lo}->add_method( '/deck/filepath', 's', \&_filepath_handler, $self );
-    $self->{lo}->add_method( '/version', 's', \&_version_handler, $self );
+    $self->{lo}->add_method( '/version', 'ss', \&_version_handler, $self );
     $self->{lo}->add_method( '/error', 's', \&_error_handler, $self );
     $self->{lo}->add_method( '/pong', '', \&_pong_handler, $self );
     
@@ -170,7 +170,7 @@ sub _filepath_handler {
 sub get_version {
 	my $self=shift;
 	$self->{version} = undef;
-	$self->_wait_reply( '/version' );
+	$self->_wait_reply( '/get_version' );
 	return $self->{version};
 }
 
@@ -184,7 +184,7 @@ sub _version_handler {
 sub get_error {
 	my $self=shift;
 	$self->{error} = undef;
-	$self->_wait_reply( '/error' );
+	$self->_wait_reply( '/get_error' );
 	return $self->{error};
 }
 

@@ -8,6 +8,7 @@
 
 use Audio::MadJACK;
 use Term::ReadKey;
+use POSIX qw/floor/;
 use strict;
 
 # Create MadJACK object for talking to the deck
@@ -18,6 +19,8 @@ exit(-1) unless (defined $madjack);
 print "URL of madjack server: ".$madjack->get_url()."\n";
 print "MadJACK server version: ".$madjack->get_version()."\n";
 
+
+my $duration = $madjack->get_duration();
 
 # Change terminal mode
 ReadMode(3);
@@ -56,14 +59,26 @@ while( $running ) {
 		} else {
 			warn "Unknown key command ('$key')\n";
 		}
+		
+		$duration = $madjack->get_duration();
 	}
 	
 	# Display state and time
 	my $pos = $madjack->get_position();
-	printf("%s [%1.1f]                  \r", $state, $pos);
+	printf("%s [%s/%s]                  \r", $state, min_sec($pos), min_sec($duration));
 }
 
 
 # Restore terminate settings
 ReadMode(0);
+
+
+sub min_sec {
+	my ($secs) = @_;
+	
+	my $min = floor($secs / 60);
+	my $sec = ($secs - ($min*60));
+	
+	return sprintf("%d:%1.1f", $min, $sec);
+}
 
