@@ -188,19 +188,29 @@ enum mad_flow callback_header(void *data,
 	// Check to see if bitrate has changed
 	if (input->bitrate==0) {
 		input->bitrate = header->bitrate;
-		input->duration = (((float)(input->end_pos - input->start_pos) * 8) / input->bitrate);
 		warned_vbr=0;
-		
-		if (verbose) {
-			printf( "Bitrate: %d kbps.\n", input->bitrate );
-			printf( "Duration: %1.1f seconds.\n", input->duration );
-		}
-		
+		if (verbose) printf( "Bitrate: %d bps.\n", input->bitrate );
 	} else if (input->bitrate != header->bitrate) {
 		if (!warned_vbr) {
 			fprintf(stderr, "Warning: Bitrate changed during decoding, VBR is not recommended.\n");
 			warned_vbr=1;
 		}
+	}
+	
+	
+	// Calculate duration?
+	if (input->duration==0) {
+		float frames = 0;
+		float frameSize = 0;
+		int padding = 0;
+
+		if (header->flags&MAD_FLAG_PADDING) padding=1;
+		frameSize = 144 * header->bitrate / (header->samplerate + padding);
+		frames = (input->end_pos - input->start_pos) / frameSize;
+		
+		input->duration = (1152 * frames) / header->samplerate;
+		if (verbose) printf( "Duration: %2.2f seconds.\n", input->duration );
+		
 	}
 	
 	// Header looks OK
@@ -359,7 +369,7 @@ int parse_id3v1_header( FILE* file ) {
 	fread( bytes, ID3v1_HEADER_LEN, 1, file);
 	
 	
-	// Is there an ID3v2 header there ?
+	// Is there an ID3v1 header there ?
 	if (bytes[0] == 'T' && bytes[1] == 'A' && bytes[2] == 'G') {
 		if (verbose) printf("Found ID3 v1 header in file (0x80 bytes long).\n");
 		return 0x80;
