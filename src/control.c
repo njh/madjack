@@ -234,6 +234,23 @@ void do_cue()
 	}
 }
 
+
+// Pause Deck (if playing)
+void do_pause()
+{
+	if (verbose) printf("-> do_pause()\n");
+	
+	if (get_state() == MADJACK_STATE_PLAYING )
+	{
+		set_state( MADJACK_STATE_PAUSED );
+	}
+	else if (get_state() != MADJACK_STATE_PAUSED)
+	{
+		fprintf(stderr, "Warning: Can't change from %s to state PAUSED.\n", get_state_name(get_state()) );
+	}
+}
+
+
 // Set the cue point for current track
 int do_set_cuepoint(float cuepoint)
 {
@@ -253,21 +270,6 @@ int do_set_cuepoint(float cuepoint)
 	}
 }
 
-
-// Pause Deck (if playing)
-void do_pause()
-{
-	if (verbose) printf("-> do_pause()\n");
-	
-	if (get_state() == MADJACK_STATE_PLAYING )
-	{
-		set_state( MADJACK_STATE_PAUSED );
-	}
-	else if (get_state() != MADJACK_STATE_PAUSED)
-	{
-		fprintf(stderr, "Warning: Can't change from %s to state PAUSED.\n", get_state_name(get_state()) );
-	}
-}
 
 
 // Stop deck (and close down decoder)

@@ -37,14 +37,15 @@
 
 
 enum madjack_state {
-	MADJACK_STATE_PLAYING,		// 0: Deck is playing
-	MADJACK_STATE_PAUSED,		// 1: Deck is paused in mid-playback
-	MADJACK_STATE_READY,		// 2: Deck is loaded and ready to play
-	MADJACK_STATE_LOADING,		// 3: In process of loading deck
-	MADJACK_STATE_STOPPED,		// 4: Track is loaded but not decoding
-	MADJACK_STATE_EMPTY,		// 5: No track is loaded in deck
-	MADJACK_STATE_ERROR,		// 6: Problem opening/decoding track
-	MADJACK_STATE_QUIT			// 7: Time to quit
+	MADJACK_STATE_STARTING=-1,	// -1: Initial state
+	MADJACK_STATE_PLAYING,		//  0: Deck is playing
+	MADJACK_STATE_PAUSED,		//  1: Deck is paused in mid-playback
+	MADJACK_STATE_READY,		//  2: Deck is loaded and ready to play
+	MADJACK_STATE_LOADING,		//  3: In process of loading deck
+	MADJACK_STATE_STOPPED,		//  4: Track is loaded but not decoding
+	MADJACK_STATE_EMPTY,		//  5: No track is loaded in deck
+	MADJACK_STATE_ERROR,		//  6: Problem opening/decoding track
+	MADJACK_STATE_QUIT			//  7: Time to quit
 };
 
 

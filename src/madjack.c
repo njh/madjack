@@ -30,6 +30,7 @@
 
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
+#include <jack/transport.h>
 #include <getopt.h>
 #include <errno.h>
 #include <stdarg.h>
@@ -49,13 +50,16 @@ jack_ringbuffer_t *ringbuffer[2] = {NULL, NULL};
 jack_client_t *client = NULL;
 
 input_file_t *input_file = NULL;	// Input file info structure
-int state = MADJACK_STATE_EMPTY;	// State of MadJACK
+int state = MADJACK_STATE_STARTING;	// State of MadJACK
 int play_when_ready = 0;			// When in READY state, start playing immediately
 char * root_directory = "";			// Root directory (files loaded relative to this)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
 float rb_duration = DEFAULT_RB_LEN;	// Duration of ring buffer (in seconds)
 char error_string[MAX_ERRORSTR_LEN] = "\0";	// Last error that occurred 
+
+
+
 
 
 
@@ -107,6 +111,7 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 	// Success
 	return 0;
 }
+					
 
 
 static
@@ -197,9 +202,9 @@ void init_jack( const char* client_name, jack_options_t jack_opt )
 			exit(1);
 		}
 	}
-
+	
 	// Register shutdown callback
-	jack_on_shutdown (client, shutdown_callback_jack, NULL );
+	jack_on_shutdown(client, shutdown_callback_jack, NULL );
 
 	// Register callback
 	jack_set_process_callback(client, callback_jack, NULL);
@@ -307,6 +312,7 @@ void error_handler( char *fmt, ... )
 const char* get_state_name( enum madjack_state state )
 {
 	switch( state ) {
+		case MADJACK_STATE_STARTING: return "STARTING";
 		case MADJACK_STATE_PLAYING: return "PLAYING";
 		case MADJACK_STATE_PAUSED: return "PAUSED";
 		case MADJACK_STATE_READY: return "READY";
@@ -335,6 +341,13 @@ void set_state( enum madjack_state new_state )
 			printf("State: %s          \n",get_state_name(new_state));
 		}
 		state = new_state;
+		
+		
+		if (state == MADJACK_STATE_PLAYING) {
+			jack_transport_start( client );
+		} else {
+			jack_transport_stop( client );
+		}
 	}
 	
 	if (new_state == MADJACK_STATE_READY && play_when_ready) {
@@ -425,9 +438,6 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Cannot activate JACK client.\n");
 		exit(1);
 	}
-	
-	// Initialise LibLO
-	osc_thread = init_osc( osc_port );
 
 	// Setup signal handlers
 	signal(SIGTERM, termination_handler);
@@ -440,6 +450,12 @@ int main(int argc, char *argv[])
 	if (connect_left) connect_jack_port( outport[0], connect_left );
 	if (connect_right) connect_jack_port( outport[1], connect_right );
 
+	// Initialise LibLO
+	osc_thread = init_osc( osc_port );
+
+
+	// Nothing currently loaded
+	set_state( MADJACK_STATE_EMPTY );
     
 	// Load an initial track ?
 	if (argc) do_load( *argv );
