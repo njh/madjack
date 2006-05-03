@@ -183,7 +183,10 @@ enum mad_flow callback_header(void *data,
 						header->samplerate, jack_get_sample_rate( client ) );
 		
 		return MAD_FLOW_BREAK;
+	} else {
+		input->samplerate = header->samplerate;
 	}
+	
 	
 	// Check to see if bitrate has changed
 	if (input->bitrate==0) {
@@ -201,12 +204,11 @@ enum mad_flow callback_header(void *data,
 	// Calculate duration?
 	if (input->duration==0) {
 		float frames = 0;
-		float frameSize = 0;
 		int padding = 0;
 
 		if (header->flags&MAD_FLAG_PADDING) padding=1;
-		frameSize = 144 * header->bitrate / (header->samplerate + padding);
-		frames = (input->end_pos - input->start_pos) / frameSize;
+		input->framesize = 144 * header->bitrate / (header->samplerate + padding);
+		frames = (input->end_pos - input->start_pos) / input->framesize;
 		
 		input->duration = (1152 * frames) / header->samplerate;
 		if (verbose) printf( "Duration: %2.2f seconds.\n", input->duration );
@@ -413,9 +415,6 @@ static void mpeg_audio_length( input_file_t *input )
 	fseek( file, input->end_pos-10, SEEK_SET);
 	input->end_pos -= parse_id3v2_header( file );
 
-
-	// Seek to the start of the audio
-	fseek( file, input->start_pos, SEEK_SET);
 }
 
 
@@ -449,13 +448,9 @@ void start_decoder_thread(void *data)
 	// Reset the position in track
 	input_file->position = 0.0;
 	input_file->duration = 0.0;
-	input_file->cuepoint = 0.0;
 	
 	// Empty out the read buffer
 	input->buffer_used = 0;
-	
-	// Reset the bitrate
-	input_file->bitrate = 0;
 	
 	// Empty out ringbuffers
 	jack_ringbuffer_reset( ringbuffer[0] );
@@ -463,6 +458,29 @@ void start_decoder_thread(void *data)
 	
 	// Get the length/start of the audio in the file (after ID3 tag)
 	mpeg_audio_length( input_file );
+	
+	
+	// Move to the cuepoint
+	if (input_file->cuepoint != 0.0) {
+		if (input_file->bitrate) {
+			unsigned long frames = (input->cuepoint * input->samplerate) / 1152;
+			unsigned long bytes = frames * input->framesize;	// *** Check framesize is set ***
+			
+			printf("cuepoint frames: %lu\n", frames);
+			printf("cuepoint bytes: %lu\n", bytes);
+			
+			
+			input->position = input_file->cuepoint;
+			fseek( input->file, input->start_pos+bytes, SEEK_SET);
+		} else {
+			fprintf(stderr, "Warning: failed to seek to cuepoint, because bitrate is unknown.\n");
+			fseek( input->file, input->start_pos, SEEK_SET);
+		}
+	
+	} else {
+		// Seek to the start of the audio
+		fseek( input->file, input->start_pos, SEEK_SET);
+	}
 
 		
 	// Start the decoder thread

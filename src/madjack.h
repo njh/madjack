@@ -64,6 +64,8 @@ typedef struct input_file_struct {
 	float cuepoint;						// Position of cuepoint (in seconds)
 	
 	int bitrate;						// Bitrate of the input file (in kbps)
+	int samplerate;						// Sample rate of the input file (in Hz)
+	int framesize;						// Length of a frame of audio (in bytes)
 
 } input_file_t;
 

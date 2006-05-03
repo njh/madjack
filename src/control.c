@@ -181,12 +181,20 @@ void do_play()
 // Prepare deck to go into 'READY' state
 void do_cue()
 {
-	if (verbose) printf("-> do_cue()\n");
+	if (verbose) printf("-> do_cue(%f)\n", input_file->cuepoint);
 	
 	// Stop first
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED)
 	{
+		do_stop();
+	}
+	
+	// Had cue-point changed?
+	if (get_state() == MADJACK_STATE_READY &&
+	    input_file->position != input_file->cuepoint)
+	{
+		if (verbose) printf("Stopping because cuepoint changed.\n");
 		do_stop();
 	}
 	
@@ -205,6 +213,20 @@ void do_cue()
 	}
 }
 
+// Set the cue point for current track
+int do_set_cue(float cuepoint)
+{
+	// Make sure it is in range
+	//if ()
+	
+	// } else {
+	
+
+	// Valid
+	if (verbose) printf("-> do_set_cue(%f)\n", cuepoint);
+	input_file->cuepoint = cuepoint;
+	return 0;
+}
 
 // Pause Deck (if playing)
 void do_pause()
@@ -279,6 +301,9 @@ void do_eject()
 		input_file->position = 0.0;
 		input_file->duration = 0.0;
 		input_file->cuepoint = 0.0;
+		input_file->bitrate = 0;
+		input_file->samplerate = 0;
+		input_file->framesize = 0;
 
 		// Deck is now empty
 		set_state( MADJACK_STATE_EMPTY );
@@ -349,6 +374,26 @@ void do_quit()
 }
 
 
+float read_cuepoint()
+{
+/*	char *filename = malloc(MAX_FILENAME_LEN);
+	int i;
+	
+	reset_input_mode();
+
+	printf("Enter name of file to load: ");
+	fgets( filename, MAX_FILENAME_LEN-1, stdin );
+	
+	// Remove carrage return from end of filename
+	for(i=0; i<MAX_FILENAME_LEN; i++) {
+		if (filename[i]==10 || filename[i]==13) filename[i]=0;
+	}
+
+	set_input_mode( );
+*/
+
+	return 0.0;
+}
 
 void display_keyhelp()
 {
@@ -358,7 +403,9 @@ void display_keyhelp()
 	printf( "  l: Load a Track\n" );
 	printf( "  e: Eject current track\n" );
 	printf( "  s: Stop Deck\n" );
-	printf( "  c: Cue deck to start of track\n" );
+	printf( "  c: Move deck to track's cue point\n" );
+	printf( "  C: Set cue point for track\n" );
+	printf( "  P: Set cue point to current position\n" );
 	printf( "  q: Quit MadJack\n" );
 	printf( "\n" );	
 }
@@ -367,7 +414,7 @@ static
 void read_keypress()
 {
 	// Get keypress
-	int c = tolower( fgetc( stdin ) );
+	int c = fgetc( stdin );
 	switch(c) {
 	
 		// Pause/Play
@@ -387,10 +434,19 @@ void read_keypress()
 			break;
 		}
 
-		case 'c': do_cue(); break;
 		case 'e': do_eject(); break;
 		case 's': do_stop(); break;
 		case 'q': do_quit(); break;
+		case 'c': do_cue(); break;
+
+		case 'C': {
+			float cuepoint = read_cuepoint();
+			do_set_cue( cuepoint );
+			break;
+		}
+		case 'P':
+			do_set_cue( input_file->position );
+		break;
 		
 		default:
 			printf( "Unknown command '%c'.\n", (char)c );
