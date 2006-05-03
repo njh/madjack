@@ -470,7 +470,7 @@ void start_decoder_thread(void *data)
 			printf("cuepoint bytes: %lu\n", bytes);
 			
 			
-			input->position = input_file->cuepoint;
+			input->position = (1152 * frames) / input->samplerate;
 			fseek( input->file, input->start_pos+bytes, SEEK_SET);
 		} else {
 			fprintf(stderr, "Warning: failed to seek to cuepoint, because bitrate is unknown.\n");
