@@ -25,6 +25,7 @@
 #define QMADJACK_H
 
 #include <QObject>
+#include <QString>
 #include <QStringList>
 #include <lo/lo.h>
 
@@ -63,7 +64,8 @@ class QMadJACK : public QObject
 		QString get_state();
 		QString get_error();
 		QString get_url();
-		
+
+
 	private:
 		void init();
 		
@@ -81,8 +83,31 @@ class QMadJACK : public QObject
 		static void err_hander( int num, const char *msg, const char *where );
 		
 		static int state_handler(const char *path, const char *types, 
-		lo_arg **argv, int argc, lo_message msg, void *user_data);
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
+		static int cuepoint_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int duration_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int position_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int filename_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int filepath_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int version_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int error_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
+
+		static int pong_handler(const char *path, const char *types, 
+			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
 		
 	// Private variables

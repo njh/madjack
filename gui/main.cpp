@@ -33,28 +33,39 @@ int main(int argc, char *argv[])
     QCoreApplication app(argc, argv);
     QTextStream cout(stdout, QIODevice::WriteOnly);
 	QMadJACK madjack(4444);
-	
-	app.setApplicationName( "QMadJack Test" );
 
 
-	//qDebug("URL of madjack server: %s", madjack->get_url() );
-	//qDebug("MadJACK server version: %s", madjack->get_version() );
+	cout << "URL of madjack server: " << madjack.get_url() << endl;
+	cout << "MadJACK server version: " << madjack.get_version() << endl;
 	
-	
-	
-	//madjack.load( "/Users/njh/Music/003524.mp3" );
-	//madjack.set_cuepoint( 10.2 );
-	//madjack.cue();
-	
-	
-	
-	cout << "state: " << madjack.get_state() << endl;
-	madjack.play();
-	
-	//print "Cuepoint: ".$madjack->get_cuepoint()."\n";
-	//print "Duration: ".$madjack->get_duration()."\n";
-	//print "Position: ".$madjack->get_position()."\n";
+	madjack.load( "/Users/njh/Music/002944.mp3" );
+	madjack.set_cuepoint( 10.2 );
+	madjack.cue();
+	sleep(1);
 
+	cout << "Filename: " << madjack.get_filename() << endl;
+	cout << "Filepath: " << madjack.get_filepath() << endl;
+	
+	cout << "Deck State: " << madjack.get_state() << endl;
+	cout << "Cuepoint: " << madjack.get_cuepoint() << endl;
+	cout << "Duration: " << madjack.get_duration() << endl;
+	cout << "Position: " << madjack.get_position() << endl;
+
+	if (!madjack.play()) cout << "Failed to play" << endl;
+	sleep(3);
+	
+	if (!madjack.pause()) cout << "Failed to pause" << endl;
+	sleep(1);
+	if (!madjack.stop()) cout << "Failed to stop" << endl;
+	sleep(1);
+	if (!madjack.eject()) cout << "Failed to eject" << endl;
+
+
+	cout << "Ping: " << madjack.ping() << endl;
+
+	if (!madjack.load( "/doesnt exist" )) cout << "Failed to load" << endl;
+	cout << "Deck State: " << madjack.get_state() << endl;
+	cout << "Deck Error: " << madjack.get_error() << endl;
 	
 	return 0;
 	

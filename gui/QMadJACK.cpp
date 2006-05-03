@@ -21,9 +21,9 @@
 
 */
 
-
-#include <QMadJACK.h>
 #include <QDebug>
+
+#include "QMadJACK.h"
 
 
 QMadJACK::QMadJACK(lo_address address)
@@ -37,9 +37,7 @@ QMadJACK::QMadJACK(short port)
 {
 	Q_ASSERT( port != 0 );
 	QString strport = QString::number( port );
-		
 	this->addr = lo_address_new( "localhost", strport.toLatin1() );
-	
 	init();
 }
 
@@ -50,32 +48,14 @@ QMadJACK::QMadJACK( const QString &url )
 	init();
 }
 
-
 QMadJACK::~QMadJACK()
 {
-	qDebug( "Cleaning up." );
-	
 	if (this->addr) lo_address_free( this->addr );
 	if (this->serv) lo_server_free( this->serv );
 }
 
 
 
-
-void QMadJACK::err_hander( int num, const char *msg, const char *where )
-{
-	qCritical( "liblo error (%d): %s %s", num, msg, where );
-	
-}
-
-
-int QMadJACK::state_handler(const char *path, const char *types, 
-		lo_arg **argv, int argc, lo_message msg, void *user_data)
-{
-	QMadJACK *obj = (QMadJACK*)user_data;
-	obj->reply_state = &argv[0]->s;
-    return 0;
-}
 
 
 
@@ -93,31 +73,42 @@ void QMadJACK::init()
 	
 	
 	lo_server_add_method( serv, "/deck/state", "s", QMadJACK::state_handler, this);
-				
+	lo_server_add_method( serv, "/deck/cuepoint", "f", QMadJACK::cuepoint_handler, this);
+	lo_server_add_method( serv, "/deck/duration", "f", QMadJACK::duration_handler, this);
+	lo_server_add_method( serv, "/deck/position", "f", QMadJACK::position_handler, this);
+	lo_server_add_method( serv, "/deck/filename", "s", QMadJACK::filename_handler, this);
+	lo_server_add_method( serv, "/deck/filepath", "s", QMadJACK::filepath_handler, this);
+	lo_server_add_method( serv, "/version", "ss", QMadJACK::version_handler, this);
+	lo_server_add_method( serv, "/error", "s", QMadJACK::error_handler, this);
+	lo_server_add_method( serv, "/pong", "", QMadJACK::pong_handler, this);
 
-	// Check that the address is valid
-	qDebug( "got here with url: %s", lo_address_get_url(addr) );
 
+	// Initialse variables used in by reply handlers
+	reply_state = QString::null;
+	reply_version = QString::null;
+	reply_error = QString::null;
+	reply_filename = QString::null;
+	reply_filepath = QString::null;
+	reply_duration = 0.0f;
+	reply_position = 0.0f;
+	reply_cuepoint = 0.0f;
+	reply_pong = 0;
+	
 }
 
 
 
 int QMadJACK::load( const QString &filepath )
 {
+	QStringList desired;
+	desired << "LOADING" << "READY";
 
-//	qDebug( "Loading: %s", (const char*)path.toLatin1() );
-
-
-//	return this->send( '/deck/load', 'LOADING|READY|ERROR', 's', path);
-	// Success
-	return 0;
-}
-
-
-int QMadJACK::load()
-{
-	QStringList desired << "LOADING" << "READY";;
-	return this->send( "/deck/load", desired );
+	lo_message mesg = lo_message_new();
+	lo_message_add_string( mesg, filepath.toLatin1() );
+	int result = this->send( "/deck/load", desired, mesg );
+	lo_message_free( mesg );
+	
+	return result;
 }
 
 int QMadJACK::play()
@@ -140,7 +131,8 @@ int QMadJACK::stop()
 
 int QMadJACK::cue()
 {
-	QStringList desired << "LOADING" << "READY";;
+	QStringList desired;
+	desired << "LOADING" << "READY";
 	return this->send( "/deck/cue", desired );
 }
 
@@ -149,6 +141,89 @@ int QMadJACK::eject()
 	QStringList desired( "EMPTY" );
 	return this->send( "/deck/eject", desired );
 }
+
+
+QString QMadJACK::get_state()
+{
+	this->reply_state = QString::null;
+	this->wait_reply( "/deck/get_state" );
+	return this->reply_state;
+}
+
+int QMadJACK::set_cuepoint( float cuepoint )
+{
+	QStringList desired;
+
+	lo_message mesg = lo_message_new();
+	lo_message_add_float( mesg, cuepoint );
+	int result = this->send( "/deck/set_cuepoint", desired, mesg );
+	lo_message_free( mesg );
+	
+	return result;
+}
+
+float QMadJACK::get_cuepoint()
+{
+	this->reply_cuepoint = 0.0f;
+	this->wait_reply( "/deck/get_cuepoint" );
+	return this->reply_cuepoint;
+}
+
+float QMadJACK::get_duration()
+{
+	this->reply_duration = 0.0f;
+	this->wait_reply( "/deck/get_duration" );
+	return this->reply_duration;
+}
+
+float QMadJACK::get_position()
+{
+	this->reply_position = 0.0f;
+	this->wait_reply( "/deck/get_position" );
+	return this->reply_position;
+}
+
+QString QMadJACK::get_filename()
+{
+	this->reply_filename = QString::null;
+	this->wait_reply( "/deck/get_filename" );
+	return this->reply_filename;
+}
+
+QString QMadJACK::get_filepath()
+{
+	this->reply_filepath = QString::null;
+	this->wait_reply( "/deck/get_filepath" );
+	return this->reply_filepath;
+}
+
+QString QMadJACK::get_version()
+{
+	this->reply_version = QString::null;
+	this->wait_reply( "/get_version" );
+	return this->reply_version;
+}
+
+QString QMadJACK::get_error()
+{
+	this->reply_error = QString::null;
+	this->wait_reply( "/get_error" );
+	return this->reply_error;
+}
+
+int QMadJACK::ping()
+{
+	this->reply_pong = 0;
+	this->wait_reply( "/ping" );
+	return this->reply_pong;
+}
+
+QString QMadJACK::get_url()
+{
+	return lo_address_get_url(addr);
+}
+
+
 
 
 
@@ -185,19 +260,11 @@ int QMadJACK::send( const QString &path,
 		if (desired.size()) {
 			QString state = this->get_state();
 			
-			qDebug( "Got state: %s", (const char*)state.toLatin1() );
-			
-			if (state == "ERROR") {
-				qWarning("Warning: MadJACK is in error state." );
-				return 1;
-			}
+			// In error state
+			if (state == "ERROR") return 0;
 			
 			for (int j=0; j < desired.size(); ++j) {
-				qDebug( "Desired state: %s", (const char*)desired.at(j).toLatin1() );
-				if (desired.at(j) == state) {
-					qDebug( "yay!" );
-					return 1;
-				}
+				if (desired.at(j) == state) return 1;
 			}
 
 		} else {
@@ -244,11 +311,88 @@ int QMadJACK::wait_reply( const QString &path )
 }
 
 
-QString QMadJACK::get_state()
+
+
+
+
+
+void QMadJACK::err_hander( int num, const char *msg, const char *where )
 {
-	this->reply_state = QString::null;
-	this->wait_reply( "/deck/get_state" );
-	return this->reply_state;
+	qCritical( "liblo error (%d): %s %s", num, msg, where );
+	
 }
 
 
+int QMadJACK::state_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_state = &argv[0]->s;
+    return 0;
+}
+
+int QMadJACK::cuepoint_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_cuepoint = argv[0]->f;
+    return 0;
+}
+
+int QMadJACK::duration_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_duration = argv[0]->f;
+    return 0;
+}
+
+int QMadJACK::position_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_position = argv[0]->f;
+    return 0;
+}
+
+int QMadJACK::filename_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_filename = &argv[0]->s;
+    return 0;
+}
+
+int QMadJACK::filepath_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_filepath = &argv[0]->s;
+    return 0;
+}
+
+int QMadJACK::version_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_version = &argv[0]->s;
+	obj->reply_version += '/';
+	obj->reply_version += &argv[1]->s;
+    return 0;
+}
+
+int QMadJACK::error_handler(const char *, const char *, 
+		lo_arg **argv, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_error = &argv[0]->s;
+    return 0;
+}
+
+int QMadJACK::pong_handler(const char *, const char *, 
+		lo_arg **, int, lo_message, void *user_data)
+{
+	QMadJACK *obj = (QMadJACK*)user_data;
+	obj->reply_pong++;
+    return 0;
+}
