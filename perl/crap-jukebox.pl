@@ -81,7 +81,7 @@ sub play_file {
 
 	# Wait for song to end
 	while ( $madjack->get_state() =~ /PLAYING|PAUSED/) {
-		printf("%s [%1.1f]    \r", $madjack->get_state(), $madjack->get_position());
+		printf("%s [%1.1f/%1.1f]    \r", $madjack->get_state(), $madjack->get_position(), $madjack->get_duration());
 		sleep 0.1;
 	}	
 	
@@ -91,7 +91,7 @@ sub play_file {
 		# Stop and eject
 		$madjack->stop() || warn "Failed to stop";
 		$madjack->eject() || warn "Failed to eject";
-		print ".";
+		print ".             ";
 	}
 	print "\n";
 	
