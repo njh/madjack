@@ -25,6 +25,7 @@
 #define _CONTROL_H_
 
 void do_load( const char* name );
+int do_set_cuepoint( float cuepoint );
 void do_cue();
 void do_play();
 void do_pause();

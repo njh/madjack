@@ -50,6 +50,7 @@ jack_client_t *client = NULL;
 
 input_file_t *input_file = NULL;	// Input file info structure
 int state = MADJACK_STATE_EMPTY;	// State of MadJACK
+int play_when_ready = 0;			// When in READY state, start playing immediately
 char * root_directory = "";			// Root directory (files loaded relative to this)
 int verbose = 0;					// Verbose flag (display more information)
 int quiet = 0;						// Quiet flag (stay silent unless error)
@@ -87,7 +88,6 @@ int callback_jack(jack_nframes_t nframes, void *arg)
 					set_state( MADJACK_STATE_STOPPED );
 					input_file->position = input_file->duration;
 				}
-				
 			}
 			
 			// Increment the position in the track
@@ -329,13 +329,20 @@ void set_state( enum madjack_state new_state )
 {
 	if (state != new_state) {
 		if (verbose) {
-			printf("State changing from '%s' to '%s'.\n",
+			printf("State changing from '%s' to '%s'.    \n",
 				get_state_name(state), get_state_name(new_state));
 		} else if (!quiet) {
-			printf("State: %s\n",get_state_name(new_state));
+			printf("State: %s          \n",get_state_name(new_state));
 		}
 		state = new_state;
 	}
+	
+	if (new_state == MADJACK_STATE_READY && play_when_ready) {
+		if (verbose) printf("play_when_ready is set.\n");
+		play_when_ready = 0;
+		do_play();
+	}
+	   
 }
 
 

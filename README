@@ -57,47 +57,53 @@ madjack_remote <command>
 OSC Interface
 -------------
 
- /deck/play          - Start deck playing
- /deck/pause         - Pause deck
- /deck/stop          - Stop Deck playback
- /deck/cue           - Cue deck to start of track
- /deck/eject         - Eject the current track from deck
- /deck/load (s)      - Load <filename> into deck
+ /deck/play             - Start deck playing
+ /deck/pause            - Pause deck
+ /deck/stop             - Stop Deck playback
+ /deck/cue              - Cue deck to start of track
+ /deck/eject            - Eject the current track from deck
+ /deck/load (s)         - Load <filename> into deck
 
- /deck/get_state     - Get deck state
+ /deck/get_state        - Get deck state
   replies with:
  /deck/state (s)
  
  State Strings:
-    PLAYING          - Deck is playing
-    PAUSED           - Deck is paused
-    READY            - Deck is loaded and ready to play
-    LOADING          - Starting to decode track
-    STOPPED          - At end of track / Stopped
-    ERROR            - Problem opening/decoding track
-    EMPTY            - No track loaded in deck
+     PLAYING            - Deck is playing
+     PAUSED             - Deck is paused
+     READY              - Deck is loaded and ready to play
+     LOADING            - Starting to decode track
+     STOPPED            - At end of track / Stopped
+     ERROR              - Problem opening/decoding track
+     EMPTY				- No track loaded in deck
 
- /deck/get_error     - Get description of error (when in state ERROR)
+ /deck/get_error		- Get description of error (when in state ERROR)
   replies with:
  /deck/error (s)
 
- /deck/get_version   - Get name and version number of MadJACK
+ /deck/get_version		- Get name and version number of MadJACK
   replies with:
  /deck/version (ss)
  
- /deck/get_position  - Get deck position (in seconds)
+ /deck/get_position		- Get deck position (in seconds)
   replies with:
  /deck/position (f)
 
- /deck/get_filename  - Get name of track (minus suffix and path)
+ /deck/set_cuepoint (f)	- Set the cuepoint for the current track (in seconds)
+
+ /deck/get_cuepoint     - Get the current cuepoint (in seconds)
+  replies with:
+ /deck/cuepoint (f)
+
+ /deck/get_filename     - Get name of track (minus suffix and path)
   replies with:
  /deck/filename (s)
  
- /deck/get_filepath  - Get path of track (as passed to/deck/load)
+ /deck/get_filepath     - Get path of track (as passed to/deck/load)
   replies with:
  /deck/filepath (s)
  
- /ping               - Check deck is still there
+ /ping                  - Check deck is still there
   replies with:
  /pong
 

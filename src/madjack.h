@@ -77,6 +77,7 @@ extern jack_client_t *client;
 extern input_file_t *input_file;
 extern char * root_directory;
 extern char error_string[MAX_ERRORSTR_LEN];
+extern int play_when_ready;
 extern int verbose;
 extern int quiet;
 

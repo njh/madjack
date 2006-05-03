@@ -8,9 +8,7 @@ In order of priority:
  - Write manpages for madjack and madjack-remote
  
  
- - allow changing of cue point
-
- - allow seeking to specific position
+ - allow seeking to specific position?
  
  - more accurate converting of MAD's fixed numbers to 32bit floats ?
  
@@ -18,7 +16,7 @@ In order of priority:
 
  - make pause/play smoother (rapid fade?)
  
- - adjust playback speed
+ - adjust playback speed/rate
 
  - simple GUI
 

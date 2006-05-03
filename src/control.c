@@ -98,6 +98,23 @@ char* read_filename()
 	return filename;
 }
 
+// Read a cuepoint from STDIN
+float read_cuepoint()
+{
+	float cue;
+
+	reset_input_mode();
+
+	printf("Enter new cue point: ");
+	fscanf( stdin, "%f", &cue );
+
+	set_input_mode( );
+
+	return cue;
+}
+
+
+
 // Concatinate a filename on the end of the root path
 static
 char* build_fullpath( const char* root, const char* name )
@@ -171,6 +188,10 @@ void do_play()
 	{
 		set_state( MADJACK_STATE_PLAYING );
 	}
+	else if (get_state() == MADJACK_STATE_LOADING)
+	{
+		play_when_ready = 1;
+	}
 	else if (get_state() != MADJACK_STATE_PLAYING)
 	{
 		fprintf(stderr, "Warning: Can't change from %s to state PLAYING.\n", get_state_name(get_state()) );
@@ -214,19 +235,24 @@ void do_cue()
 }
 
 // Set the cue point for current track
-int do_set_cue(float cuepoint)
+int do_set_cuepoint(float cuepoint)
 {
-	// Make sure it is in range
-	//if ()
-	
-	// } else {
-	
-
-	// Valid
 	if (verbose) printf("-> do_set_cue(%f)\n", cuepoint);
-	input_file->cuepoint = cuepoint;
-	return 0;
+
+	// Make sure it is in range
+	if (cuepoint < 0.0) {
+		fprintf(stderr, "Warning: cuepoint is less than zero.\n" );
+		return 1;
+	} else if (input_file->duration <= cuepoint) {
+		fprintf(stderr, "Warning: cuepoint is beyond end of file.\n" );
+		return 1;
+	} else {
+		// Valid
+		input_file->cuepoint = cuepoint;
+		return 0;
+	}
 }
+
 
 // Pause Deck (if playing)
 void do_pause()
@@ -374,27 +400,6 @@ void do_quit()
 }
 
 
-float read_cuepoint()
-{
-/*	char *filename = malloc(MAX_FILENAME_LEN);
-	int i;
-	
-	reset_input_mode();
-
-	printf("Enter name of file to load: ");
-	fgets( filename, MAX_FILENAME_LEN-1, stdin );
-	
-	// Remove carrage return from end of filename
-	for(i=0; i<MAX_FILENAME_LEN; i++) {
-		if (filename[i]==10 || filename[i]==13) filename[i]=0;
-	}
-
-	set_input_mode( );
-*/
-
-	return 0.0;
-}
-
 void display_keyhelp()
 {
 	printf( "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION );
@@ -409,6 +414,7 @@ void display_keyhelp()
 	printf( "  q: Quit MadJack\n" );
 	printf( "\n" );	
 }
+
 
 static
 void read_keypress()
@@ -441,11 +447,11 @@ void read_keypress()
 
 		case 'C': {
 			float cuepoint = read_cuepoint();
-			do_set_cue( cuepoint );
+			do_set_cuepoint( cuepoint );
 			break;
 		}
 		case 'P':
-			do_set_cue( input_file->position );
+			do_set_cuepoint( input_file->position );
 		break;
 		
 		default:
