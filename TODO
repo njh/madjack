@@ -7,6 +7,7 @@ In order of priority:
 
  - Write manpages for madjack and madjack-remote
  
+ - resample audio that has different samplerate to jack
  
  - allow seeking to specific position?
  
