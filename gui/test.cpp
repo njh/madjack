@@ -21,53 +21,18 @@
 */
 
 
-#include <QApplication>
-#include <QPushButton>
-#include <QWidget>
+#include <QCoreApplication>
 #include <QtGlobal>
 #include <QtDebug>
 
-#include "QMadJACKWidget.h"
 #include "QMadJACK.h"
 
 
-class MyWidget : public QWidget
-{
-public:
-    MyWidget(QWidget *parent = 0);
-};
-
-MyWidget::MyWidget(QWidget *parent)
-    : QWidget(parent)
-{
-    setFixedSize(200, 120);
-
-    QPushButton *quit = new QPushButton(tr("Quit"), this);
-    quit->setGeometry(62, 40, 75, 30);
- 
-    connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
-}
-
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
- 	QMadJACK madjack(4444);
-	MyWidget widget;
-    widget.show();
-    
-    qDebug( "Starting main loop" );
-    
-    return app.exec();
-}
-
-
-
-/*
-
-int main(int argc, char *argv[])
-{
-    QApplication app(argc, argv);
+    QCoreApplication app(argc, argv);
     QTextStream cout(stdout, QIODevice::WriteOnly);
+	QMadJACK madjack(4444);
 
 
 	cout << "URL of madjack server: " << madjack.get_url() << endl;
@@ -105,6 +70,3 @@ int main(int argc, char *argv[])
 	return 0;
 	
 }
-*/
-
-
