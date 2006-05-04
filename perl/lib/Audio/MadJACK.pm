@@ -197,7 +197,7 @@ sub get_version {
 
 sub _version_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{version}=$params[0].' '.$params[1];
+	$userdata->{version}=$params[0].'/'.$params[1];
 	return 0; # Success
 }
 
