@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
  
+ - Make madjack close down properly when jackd goes away
+ 
  - Add Jack Transport support
 
  - Write manpages for madjack and madjack-remote
