@@ -3,6 +3,8 @@ MadJACK TODO List
 
 In order of priority:
  
+ - Problem with (one channel) turning to static during plackback?
+ 
  - Make madjack close down properly when jackd goes away
  
  - Add Jack Transport support
