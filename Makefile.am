@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
 
-SUBDIRS = src @GUI_DIRS@
+SUBDIRS = src @QT_SUBDIRS@
 
 EXTRA_DIST = autogen.sh TODO

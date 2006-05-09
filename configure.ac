@@ -63,14 +63,15 @@ AC_CHECK_FUNCS( atexit usleep )
 
 dnl ############## Check for QT4 for GUI
 
+AC_ARG_VAR([QTDIR], [Location of QT4 installation])
 AC_PATH_PROG(ac_qmake, qmake, [no], $QTDIR/bin:${PATH})
 if test "x$ac_qmake" = "xno"; then
 	AC_MSG_WARN([Didn't find qmake, so not building GUI])
-	GUI_DIRS=""
+	QT_SUBDIRS=""
 else
-	GUI_DIRS="gui"
+	QT_SUBDIRS="gui"
 fi
-AC_SUBST(GUI_DIRS)
+AC_SUBST(QT_SUBDIRS)
 
 
 
