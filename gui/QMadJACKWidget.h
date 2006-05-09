@@ -21,13 +21,11 @@
 
 */
 
-#ifndef QMADJACK_H
-#define QMADJACK_H
+#ifndef QMADJACKWIDGET_H
+#define QMADJACKWIDGET_H
 
 #include <QObject>
-#include <QString>
-#include <QStringList>
-#include <lo/lo.h>
+#include <QWidget>
 
 #include "QMadJack.h"
 
@@ -39,99 +37,6 @@ class QMadJACKWidget : public QWidget
 };
 
 
-class QMadJACKWidget : public QObject
-{
-
-    Q_OBJECT
-	
-	public:
-		QMadJACK( lo_address addr );
-		QMadJACK( short port );
-		QMadJACK( const QString &url );
-		~QMadJACK();
-		
-		int load( const QString &path );
-		int play();
-		int pause();
-		int stop();
-		int cue();
-		int eject();
-		int ping();
-		
-		int set_cuepoint( float cuepoint );
-		float get_cuepoint();
-		float get_duration();
-		float get_position();
-		
-		QString get_filename();
-		QString get_filepath();
-		QString get_version();
-		
-		QString get_state();
-		QString get_error();
-		QString get_url();
-
-
-	private:
-		void init();
-		
-		int send_message( const char* path, lo_message mesg=NULL );
-		
-		int send(  const QString &path,
-				   QStringList &desired,
-				   lo_message mesg=NULL
-				);
-				
-		int wait_reply( const QString &path );
-		
-		
-		// Callbacks
-		static void err_hander( int num, const char *msg, const char *where );
-		
-		static int state_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int cuepoint_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int duration_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int position_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int filename_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int filepath_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int version_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int error_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int pong_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		
-	// Private variables
-	private:
-		lo_address	addr;
-		lo_server	serv;
-		
-		QString		reply_state;
-		QString		reply_version;
-		QString		reply_error;
-		QString		reply_filename;
-		QString		reply_filepath;
-		float		reply_duration;
-		float		reply_position;
-		float		reply_cuepoint;
-		int			reply_pong;
-		
-};
 
 
 #endif

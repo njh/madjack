@@ -61,8 +61,20 @@ dnl ############## Function Checks
 AC_CHECK_FUNCS( atexit usleep )
 
 
+dnl ############## Check for QT4 for GUI
+
+AC_PATH_PROG(ac_qmake, qmake, [no], $QTDIR/bin:${PATH})
+if test "x$ac_qmake" = "xno"; then
+	AC_MSG_WARN([Didn't find qmake, so not building GUI])
+	GUI_DIRS=""
+else
+	GUI_DIRS="gui"
+fi
+AC_SUBST(GUI_DIRS)
+
+
 
 dnl ############## Final Output
 
-AC_OUTPUT([Makefile src/Makefile])
+AC_OUTPUT([Makefile src/Makefile gui/Makefile])
 

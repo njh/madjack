@@ -22,23 +22,25 @@
 */
 
 #include <QDebug>
+#include <QWidget>
 
 #include "QMadJACKWidget.h"
 
 
-QMadJACKWidget::QMadJACKWidget( QMadJACK &madjack )
+QMadJACKWidget::QMadJACKWidget( QWidget *parent )
+		: QWidget(parent)
 {
 
-	init();
+//	init();
 }
 
 
+/*
 QMadJACKWidget::~QMadJACKWidget()
 {
 
 
 }
-
 
 
 
@@ -51,4 +53,4 @@ void QMadJACK::init()
 }
 
 
-
+*/

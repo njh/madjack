@@ -23,37 +23,50 @@
 
 #include <QApplication>
 #include <QPushButton>
+#include <QVBoxLayout>
+#include <QLabel>
 #include <QWidget>
 #include <QtGlobal>
 #include <QtDebug>
 
-#include "QMadJACKWidget.h"
+//#include "QMadJACKWidget.h"
 #include "QMadJACK.h"
 
 
-class MyWidget : public QWidget
+class MainWindow : public QWidget
 {
-public:
-    MyWidget(QWidget *parent = 0);
+	public:
+		MainWindow(QWidget *parent = 0);
 };
 
-MyWidget::MyWidget(QWidget *parent)
-    : QWidget(parent)
+MainWindow::MainWindow(QWidget *parent)
+		: QWidget(parent)
 {
-    setFixedSize(200, 120);
-
-    QPushButton *quit = new QPushButton(tr("Quit"), this);
-    quit->setGeometry(62, 40, 75, 30);
- 
-    connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
+	QPushButton *quit = new QPushButton("Quit");
+	
+	QLabel *label = new QLabel("Hello World");
+	
+	connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
+//	connect(slider, SIGNAL(valueChanged(int)),
+//	lcd, SLOT(display(int)));
+	
+	QVBoxLayout *layout = new QVBoxLayout;
+	layout->addWidget(label);
+	layout->addWidget(quit);
+	setLayout(layout);
 }
-
+    
+    
+    
+    
+    
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
  	QMadJACK madjack(4444);
-	MyWidget widget;
-    widget.show();
+ 	
+	MainWindow w;
+    w.show();
     
     qDebug( "Starting main loop" );
     
