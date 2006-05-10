@@ -27,13 +27,20 @@
 #include <QObject>
 #include <QWidget>
 
-#include "QMadJack.h"
+#include "QMadJACK.h"
 
 
 class QMadJACKWidget : public QWidget
 {
 	public:
-		QMadJACKWidget(QWidget *parent = 0);
+		QMadJACKWidget( QMadJACK *madjack, QWidget *parent = 0);
+		~QMadJACKWidget();
+		
+	private:
+		void init();
+		
+		
+		QMadJACK *madjack;
 };
 
 

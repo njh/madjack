@@ -29,22 +29,23 @@
 #include <QtGlobal>
 #include <QtDebug>
 
-//#include "QMadJACKWidget.h"
+#include "QMadJACKWidget.h"
 #include "QMadJACK.h"
 
 
 class MainWindow : public QWidget
 {
 	public:
-		MainWindow(QWidget *parent = 0);
+		MainWindow(QMadJACK *madjack, QWidget *parent = 0);
 };
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QMadJACK *madjack, QWidget *parent)
 		: QWidget(parent)
 {
+	QLabel *label = new QLabel("URL goes here");
+	QMadJACKWidget *madjackw = new QMadJACKWidget(madjack);
 	QPushButton *quit = new QPushButton("Quit");
 	
-	QLabel *label = new QLabel("Hello World");
 	
 	connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
 //	connect(slider, SIGNAL(valueChanged(int)),
@@ -52,6 +53,7 @@ MainWindow::MainWindow(QWidget *parent)
 	
 	QVBoxLayout *layout = new QVBoxLayout;
 	layout->addWidget(label);
+	layout->addWidget(madjackw);
 	layout->addWidget(quit);
 	setLayout(layout);
 }
@@ -65,7 +67,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
  	QMadJACK madjack(4444);
  	
-	MainWindow w;
+	MainWindow w( &madjack );
     w.show();
     
     qDebug( "Starting main loop" );

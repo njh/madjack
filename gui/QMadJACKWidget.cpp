@@ -23,19 +23,20 @@
 
 #include <QDebug>
 #include <QWidget>
+#include <QPushButton>
 
 #include "QMadJACKWidget.h"
 
 
-QMadJACKWidget::QMadJACKWidget( QWidget *parent )
+QMadJACKWidget::QMadJACKWidget(  QMadJACK *in_madjack, QWidget *parent )
 		: QWidget(parent)
 {
+	madjack = in_madjack;
 
-//	init();
+	init();
 }
 
 
-/*
 QMadJACKWidget::~QMadJACKWidget()
 {
 
@@ -46,11 +47,11 @@ QMadJACKWidget::~QMadJACKWidget()
 
 
 
-void QMadJACK::init()
+void QMadJACKWidget::init()
 {
+    QPushButton *play = new QPushButton(tr("Play"), this);
 
-
+    play->setGeometry(62, 40, 75, 30);
+//	play->show();
 }
 
-
-*/
