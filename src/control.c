@@ -122,8 +122,13 @@ char* build_fullpath( const char* root, const char* name )
 	int len = 0;
 	char* filepath;
 	
+	// No root directory specified?
+	if (root==NULL) {
+		return strdup( name );
+	}
+	
 	// Calculate length of full filepath
-	len = strlen(root_directory) + strlen(name) + 2;
+	len = strlen(root) + strlen(name) + 2;
 	filepath = malloc( len );
 	if (!filepath) {
 		perror("failed to allocate memory for filepath");
@@ -131,7 +136,7 @@ char* build_fullpath( const char* root, const char* name )
 	}
 	
 	// Copy root directory to start of filepath
-	strcpy( filepath, root_directory );
+	strcpy( filepath, root );
 	
 	// Remove surplus trailing slash(es)
 	len = strlen(filepath);
