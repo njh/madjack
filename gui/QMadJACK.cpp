@@ -105,19 +105,28 @@ void QMadJACK::init()
 	reply_pong = 0;
 	
 	
-	// Position update timer
-	pos_timer = new QTimer( this );
-	pos_timer->setInterval( 100 );
-	connect(pos_timer, SIGNAL(timeout()), this, SLOT(update_position()));
-	pos_timer->start();
+	// Triggers every 100 msec
+	first_timer = new QTimer( this );
+	first_timer->setInterval( 100 );
+	connect(first_timer, SIGNAL(timeout()), this, SLOT(update_position()));
 	
-	// State/duration update timer
-	state_timer = new QTimer( this );
-	state_timer->setInterval( 1000 );
-	connect(state_timer, SIGNAL(timeout()), this, SLOT(update_state()));
-	state_timer->start();
-	
+	// Triggers every second
+	second_timer = new QTimer( this );
+	second_timer->setInterval( 1000 );
+	connect(second_timer, SIGNAL(timeout()), this, SLOT(update_state()));
 
+}
+
+
+void QMadJACK::set_autoupdate( bool autoupdate )
+{
+	if (autoupdate) {
+		first_timer->start();
+		second_timer->start();
+	} else {
+		first_timer->stop();
+		second_timer->stop();
+	}
 }
 
 void QMadJACK::update_position()

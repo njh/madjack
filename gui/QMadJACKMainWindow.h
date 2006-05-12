@@ -50,6 +50,8 @@ class QMadJACKMainWindow : public QWidget
 		QSlider *slider;
 		LCDTime *time;
 		QLabel *url;
+		QLabel *filepath;
+		QLabel *duration;
 		QLabel *state;
 		
 		QToolButton *play;

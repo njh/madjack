@@ -67,6 +67,9 @@ int main(int argc, char *argv[])
 	setupMenuBar( &window );
 	window.show();
 	
+	// Start updating automatically
+	madjack.set_autoupdate( true );
+	
 	return app.exec();
 }
 

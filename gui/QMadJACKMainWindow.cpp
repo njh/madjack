@@ -148,10 +148,22 @@ void QMadJACKMainWindow::init()
 	font3.setStrikeOut(false);
 
 	url = new QLabel( this );
-    url->setGeometry(10, 160, 330, 25);
+    url->setGeometry(10, 150, 330, 15);
 	url->setText( QString("URL: ") + madjack->get_url() );
 	url->setFont(font3);
 	url->setAlignment(Qt::AlignLeft);
+
+	filepath = new QLabel( this );
+    filepath->setGeometry(10, 165, 330, 15);
+	filepath->setText( QString("Filepath: ") + madjack->get_filepath() );
+	filepath->setFont(font3);
+	filepath->setAlignment(Qt::AlignLeft);
+
+	duration = new QLabel( this );
+    duration->setGeometry(10, 180, 330, 15);
+	duration->setText( QString("Duration: ") + QString::number( madjack->get_duration() ) );
+	duration->setFont(font3);
+	duration->setAlignment(Qt::AlignLeft);
 	
 	QFont font4;
 	font4.setPointSize(24);

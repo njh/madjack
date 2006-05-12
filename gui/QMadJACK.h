@@ -45,6 +45,9 @@ class QMadJACK : public QObject
 		QMadJACK( const QString &url );
 		~QMadJACK();
 		
+		
+		void set_autoupdate( bool autoupdate );
+		
 		int set_cuepoint( float cuepoint );
 		float get_cuepoint();
 		float get_duration();
@@ -126,8 +129,8 @@ class QMadJACK : public QObject
 		
 	// Private variables
 	private:
-		QTimer		*pos_timer;
-		QTimer		*state_timer;
+		QTimer		*first_timer;		// Triggers every 100 msec
+		QTimer		*second_timer;		// Triggers every second
 	
 		lo_address	addr;
 		lo_server	serv;
