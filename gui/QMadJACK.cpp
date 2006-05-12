@@ -37,14 +37,24 @@ QMadJACK::QMadJACK(short port)
 {
 	Q_ASSERT( port != 0 );
 	QString strport = QString::number( port );
-	this->addr = lo_address_new( "localhost", strport.toLatin1() );
+	this->addr = lo_address_new( "localhost", (const char*)strport.toLatin1() );
 	init();
 }
 
-QMadJACK::QMadJACK( const QString &url )
+QMadJACK::QMadJACK( const QString &string )
 {
-	Q_ASSERT( url != NULL);
-	this->addr = lo_address_new_from_url( url.toLatin1() );
+	Q_ASSERT( string != NULL);
+	
+	if (string.contains( QRegExp("^\\d*$") )) {
+		// Port number
+		qDebug( "is port" );
+		this->addr = lo_address_new( "localhost", (const char*)string.toLatin1() );
+	} else {
+		// URL
+		qDebug( "is url" );
+		this->addr = lo_address_new_from_url( string.toLatin1() );
+	}
+	
 	init();
 }
 
@@ -94,8 +104,41 @@ void QMadJACK::init()
 	reply_cuepoint = 0.0f;
 	reply_pong = 0;
 	
+	
+	// Position update timer
+	pos_timer = new QTimer( this );
+	pos_timer->setInterval( 100 );
+	connect(pos_timer, SIGNAL(timeout()), this, SLOT(update_position()));
+	pos_timer->start();
+	
+	// State/duration update timer
+	state_timer = new QTimer( this );
+	state_timer->setInterval( 1000 );
+	connect(state_timer, SIGNAL(timeout()), this, SLOT(update_state()));
+	state_timer->start();
+	
+
 }
 
+void QMadJACK::update_position()
+{
+	this->reply_position = 0.0f;
+	
+	if (this->wait_reply( "/deck/get_position" )) {
+		emit positionChanged(this->reply_position);
+		emit positionChanged((int)this->reply_position);
+	}
+}
+
+
+void QMadJACK::update_state()
+{
+	this->reply_state = "UNKNOWN";
+	
+	if (this->wait_reply( "/deck/get_state" )) {
+		emit stateChanged(this->reply_state);
+	}
+}
 
 
 int QMadJACK::load( const QString &filepath )
@@ -178,8 +221,7 @@ float QMadJACK::get_duration()
 
 float QMadJACK::get_position()
 {
-	this->reply_position = 0.0f;
-	this->wait_reply( "/deck/get_position" );
+	// Updated by timer
 	return this->reply_position;
 }
 

@@ -26,6 +26,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QTimer>
 #include <QStringList>
 #include <lo/lo.h>
 
@@ -44,14 +45,6 @@ class QMadJACK : public QObject
 		QMadJACK( const QString &url );
 		~QMadJACK();
 		
-		int load( const QString &path );
-		int play();
-		int pause();
-		int stop();
-		int cue();
-		int eject();
-		int ping();
-		
 		int set_cuepoint( float cuepoint );
 		float get_cuepoint();
 		float get_duration();
@@ -65,7 +58,24 @@ class QMadJACK : public QObject
 		QString get_error();
 		QString get_url();
 
+		
+	public slots:
+		int load( const QString &path );
+		int play();
+		int pause();
+		int stop();
+		int cue();
+		int eject();
+		int ping();
 
+	signals:
+		void positionChanged(float newPosition);
+		void positionChanged(int newPosition);
+		void stateChanged(QString newState);
+		void durationChanged(float newDuration);
+		void durationChanged(int newDuration);
+        
+        
 	private:
 		void init();
 		
@@ -109,9 +119,16 @@ class QMadJACK : public QObject
 		static int pong_handler(const char *path, const char *types, 
 			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
+	private slots:
+		void update_position();	// called by timer
+		void update_state();	// called by timer
+		
 		
 	// Private variables
 	private:
+		QTimer		*pos_timer;
+		QTimer		*state_timer;
+	
 		lo_address	addr;
 		lo_server	serv;
 		

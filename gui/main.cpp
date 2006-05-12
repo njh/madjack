@@ -22,57 +22,52 @@
 
 
 #include <QApplication>
-#include <QPushButton>
-#include <QVBoxLayout>
-#include <QLabel>
-#include <QWidget>
 #include <QtGlobal>
+#include <QMenuBar>
+#include <QAction>
 #include <QtDebug>
 
-#include "QMadJACKWidget.h"
+#include "QMadJACKMainWindow.h"
 #include "QMadJACK.h"
 
 
-class MainWindow : public QWidget
-{
-	public:
-		MainWindow(QMadJACK *madjack, QWidget *parent = 0);
-};
 
-MainWindow::MainWindow(QMadJACK *madjack, QWidget *parent)
-		: QWidget(parent)
+
+QMenuBar* setupMenuBar( QWidget *window )
 {
-	QLabel *label = new QLabel("URL goes here");
-	QMadJACKWidget *madjackw = new QMadJACKWidget(madjack);
-	QPushButton *quit = new QPushButton("Quit");
+	// Create menubar
+	QMenuBar *menubar = new QMenuBar( window );
+	QMenu *helpMenu = menubar->addMenu("&Help");
 	
+	QAction *aboutQtAct = new QAction("About &Qt", window);
+	aboutQtAct->setStatusTip("Show the Qt library's About box");
+	QObject::connect(aboutQtAct, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
+	helpMenu->addAction(aboutQtAct);
 	
-	connect(quit, SIGNAL(clicked()), qApp, SLOT(quit()));
-//	connect(slider, SIGNAL(valueChanged(int)),
-//	lcd, SLOT(display(int)));
-	
-	QVBoxLayout *layout = new QVBoxLayout;
-	layout->addWidget(label);
-	layout->addWidget(madjackw);
-	layout->addWidget(quit);
-	setLayout(layout);
+	return menubar;
 }
-    
-    
-    
     
     
 int main(int argc, char *argv[])
 {
-    QApplication app(argc, argv);
- 	QMadJACK madjack(4444);
- 	
-	MainWindow w( &madjack );
-    w.show();
+	QApplication app(argc, argv);
+    app.setApplicationName( "QMadJACK" );
     
-    qDebug( "Starting main loop" );
+    // Check the commandline arguments
+    if (app.arguments().size() < 2) {
+    	qFatal("Missing command line argument.");
+    }
     
-    return app.exec();
+    // Create QMadJACK object
+	QMadJACK madjack( app.arguments().at(1) );
+	qDebug( "url: %s", (const char*)madjack.get_url().toLatin1() );
+	
+	// Create main window
+	QMadJACKMainWindow window( &madjack );
+	setupMenuBar( &window );
+	window.show();
+	
+	return app.exec();
 }
 
 

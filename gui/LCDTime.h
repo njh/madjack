@@ -1,6 +1,6 @@
 /*
 
-	QMadJACKWidget.h
+	LCDTime.h
 	
 	QT Interface to MadJACK
 	Copyright (C) 2006  Nicholas J. Humfrey
@@ -21,29 +21,24 @@
 
 */
 
-#ifndef QMADJACKWIDGET_H
-#define QMADJACKWIDGET_H
+#ifndef LCDTIME_H
+#define LCDTIME_H
 
-#include <QObject>
-#include <QWidget>
-
-#include "QMadJACK.h"
+#include <QLCDNumber>
 
 
-class QMadJACKWidget : public QWidget
+
+class LCDTime : public QLCDNumber
 {
+    Q_OBJECT
+
 	public:
-		QMadJACKWidget( QMadJACK *madjack, QWidget *parent = 0);
-		~QMadJACKWidget();
-		
-	private:
-		void init();
-		
-		
-		QMadJACK *madjack;
+		LCDTime(QWidget *parent = 0);
+
+	public slots:
+		virtual void display( float time );
+
+
 };
-
-
-
 
 #endif

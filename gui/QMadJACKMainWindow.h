@@ -1,6 +1,6 @@
 /*
 
-	QMadJACKWidget.cpp
+	QMadJACKMainWindow.h
 	
 	QT Interface to MadJACK
 	Copyright (C) 2006  Nicholas J. Humfrey
@@ -21,37 +21,47 @@
 
 */
 
-#include <QDebug>
+#ifndef QMADJACKMAINWINDOW_H
+#define QMADJACKMAINWINDOW_H
+
 #include <QWidget>
-#include <QPushButton>
+#include <QToolButton>
+#include <QSlider>
+#include <QLabel>
 
-#include "QMadJACKWidget.h"
-
-
-QMadJACKWidget::QMadJACKWidget(  QMadJACK *in_madjack, QWidget *parent )
-		: QWidget(parent)
-{
-	madjack = in_madjack;
-
-	init();
-}
+#include "LCDTime.h"
+#include "QMadJACK.h"
 
 
-QMadJACKWidget::~QMadJACKWidget()
+class QMadJACKMainWindow : public QWidget
 {
 
+	public:
+		QMadJACKMainWindow( QMadJACK *madjack, QWidget *parent = 0);
+		~QMadJACKMainWindow();
+		
+	private:
+		void init();
+		
+		
+		QMadJACK *madjack;
+		
+		
+		QSlider *slider;
+		LCDTime *time;
+		QLabel *url;
+		QLabel *state;
+		
+		QToolButton *play;
+		QToolButton *pause;
+		QToolButton *stop;
+		QToolButton *eject;
+		QToolButton *cue;
+		QToolButton *setcue;
+		
+};
 
-}
 
 
 
-
-
-void QMadJACKWidget::init()
-{
-    QPushButton *play = new QPushButton(tr("Play"), this);
-
-    play->setGeometry(62, 40, 75, 30);
-//	play->show();
-}
-
+#endif
