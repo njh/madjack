@@ -70,7 +70,7 @@ static
 int cue_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 lo_message msg, void *user_data)
 {
-	do_cue();
+	do_cue(0.0f);
     return 0;
 }
 
@@ -94,32 +94,6 @@ int load_handler(const char *path, const char *types, lo_arg **argv, int argc,
 
 	// Load the requested track
 	do_load( &argv[0]->s );
-    return 0;
-}
-
-
-static
-int set_cuepoint_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 lo_message msg, void *user_data)
-{
-	do_set_cuepoint( argv[0]->f );
-    return 0;
-}
-
-
-static
-int get_cuepoint_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 lo_message msg, void *user_data)
-{
-	lo_address src = lo_message_get_source( msg );
-	lo_server serv = (lo_server)user_data;
-	int result;
-	
-	// Send back reply
-	result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
-	              "/deck/cuepoint", "f", input_file->cuepoint );
-	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
-
     return 0;
 }
 
@@ -273,11 +247,10 @@ lo_server_thread init_osc( char *port )
 	lo_server_thread_add_method( st, "/deck/pause", "", pause_handler, serv);
 	lo_server_thread_add_method( st, "/deck/stop", "", stop_handler, serv);
 	lo_server_thread_add_method( st, "/deck/cue", "", cue_handler, serv);
+	lo_server_thread_add_method( st, "/deck/cue", "f", cue_handler, serv);
 	lo_server_thread_add_method( st, "/deck/eject", "", eject_handler, serv);
 	lo_server_thread_add_method( st, "/deck/load", "s", load_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_state", "", state_handler, serv);
-	lo_server_thread_add_method( st, "/deck/get_cuepoint", "", get_cuepoint_handler, serv);
-	lo_server_thread_add_method( st, "/deck/set_cuepoint", "f", set_cuepoint_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_duration", "", duration_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_filepath", "", filepath_handler, serv);

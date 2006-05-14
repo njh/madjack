@@ -62,7 +62,6 @@ typedef struct input_file_struct {
 	
 	float position;						// Current postion of playback (in seconds)
 	float duration;						// Total duration of file (in seconds)
-	float cuepoint;						// Position of cuepoint (in seconds)
 	
 	int bitrate;						// Bitrate of the input file (in kbps)
 	int samplerate;						// Sample rate of the input file (in Hz)

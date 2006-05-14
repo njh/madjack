@@ -37,7 +37,7 @@ extern int is_decoding;
 
 
 // Prototypes
-void start_decoder_thread(void *input);
+void start_decoder_thread(void *input, float cuepoint);
 void finish_decoder_thread();
 
 #endif

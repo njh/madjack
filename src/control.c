@@ -176,10 +176,20 @@ void do_play()
 
 
 // Prepare deck to go into 'READY' state
-void do_cue()
+void do_cue(float cuepoint)
 {
-	if (verbose) printf("-> do_cue(%f)\n", input_file->cuepoint);
+	if (verbose) printf("-> do_cue(%f)\n", cuepoint);
 	
+	// Make sure it is in range
+	if (cuepoint < 0.0) {
+		fprintf(stderr, "Warning: cuepoint is less than zero.\n" );
+		return;
+	} else if (input_file->duration <= cuepoint) {
+		fprintf(stderr, "Warning: cuepoint is beyond end of file.\n" );
+		return;
+	}
+
+
 	// Stop first
 	if (get_state() == MADJACK_STATE_PLAYING ||
 	    get_state() == MADJACK_STATE_PAUSED)
@@ -189,7 +199,7 @@ void do_cue()
 	
 	// Had cue-point changed?
 	if (get_state() == MADJACK_STATE_READY &&
-	    input_file->position != input_file->cuepoint)
+	    input_file->position != cuepoint)
 	{
 		if (verbose) printf("Stopping because cuepoint changed.\n");
 		do_stop();
@@ -201,13 +211,14 @@ void do_cue()
 	{
 
 		// Set the decoder running
-		start_decoder_thread( input_file );
+		start_decoder_thread( input_file, cuepoint );
 		
 	}
 	else if (get_state() != MADJACK_STATE_READY)
 	{
 		fprintf(stderr, "Warning: Can't change from %s to state READY.\n", get_state_name(get_state()) );
 	}
+
 }
 
 
@@ -226,25 +237,6 @@ void do_pause()
 	}
 }
 
-
-// Set the cue point for current track
-int do_set_cuepoint(float cuepoint)
-{
-	if (verbose) printf("-> do_set_cue(%f)\n", cuepoint);
-
-	// Make sure it is in range
-	if (cuepoint < 0.0) {
-		fprintf(stderr, "Warning: cuepoint is less than zero.\n" );
-		return 1;
-	} else if (input_file->duration <= cuepoint) {
-		fprintf(stderr, "Warning: cuepoint is beyond end of file.\n" );
-		return 1;
-	} else {
-		// Valid
-		input_file->cuepoint = cuepoint;
-		return 0;
-	}
-}
 
 
 
@@ -303,7 +295,6 @@ void do_eject()
 		// Reset positions
 		input_file->position = 0.0;
 		input_file->duration = 0.0;
-		input_file->cuepoint = 0.0;
 		input_file->bitrate = 0;
 		input_file->samplerate = 0;
 		input_file->framesize = 0;
@@ -356,7 +347,7 @@ void do_load( const char* filepath )
 		free( fullpath );
 
 		// Cue up the new file	
-		do_cue();
+		do_cue(0.0f);
 	}
 	else if (get_state() != MADJACK_STATE_EMPTY)
 	{
@@ -382,9 +373,8 @@ void display_keyhelp()
 	printf( "  l: Load a Track\n" );
 	printf( "  e: Eject current track\n" );
 	printf( "  s: Stop Deck\n" );
-	printf( "  c: Move deck to track's cue point\n" );
-	printf( "  C: Set cue point for track\n" );
-	printf( "  P: Set cue point to current position\n" );
+	printf( "  c: Cue to start of track\n" );
+	printf( "  C: Cue to specified time\n" );
 	printf( "  q: Quit MadJack\n" );
 	printf( "\n" );	
 }
@@ -417,16 +407,13 @@ void read_keypress()
 		case 'e': do_eject(); break;
 		case 's': do_stop(); break;
 		case 'q': do_quit(); break;
-		case 'c': do_cue(); break;
+		case 'c': do_cue(0.0f); break;
 
 		case 'C': {
 			float cuepoint = read_cuepoint();
-			do_set_cuepoint( cuepoint );
+			do_cue( cuepoint );
 			break;
 		}
-		case 'P':
-			do_set_cuepoint( input_file->position );
-		break;
 		
 		default:
 			printf( "Unknown command '%c'.\n", (char)c );

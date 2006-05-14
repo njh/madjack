@@ -420,11 +420,11 @@ static void mpeg_audio_length( input_file_t *input )
 
 
 // Seek filehandle to the cuepoint
-static void seek_to_cuepoint( input_file_t *input )
+static void seek_to_cuepoint( input_file_t *input, float cuepoint )
 {
 	unsigned long bytes = 0;
 
-	if (input->cuepoint != 0.0) {
+	if (cuepoint != 0.0) {
 		if (input->bitrate==0) {
 			fprintf(stderr, "Warning: failed to seek to cuepoint, because bitrate is unknown.\n");
 		} else if (input->framesize==0) {
@@ -432,7 +432,7 @@ static void seek_to_cuepoint( input_file_t *input )
 		} else if (input->samplerate==0) {
 			fprintf(stderr, "Warning: failed to seek to cuepoint, because sample rate is unknown.\n");
 		} else {
-			unsigned long frames = (input->cuepoint * input->samplerate) / 1152;
+			unsigned long frames = (cuepoint * input->samplerate) / 1152;
 			bytes = frames * input->framesize;
 			input->position = (1152.0f * frames) / input->samplerate;
 		}
@@ -443,7 +443,7 @@ static void seek_to_cuepoint( input_file_t *input )
 }
 
 
-void start_decoder_thread(void *data)
+void start_decoder_thread(void *data, float cuepoint)
 {
 	input_file_t *input = data;
 	int result;
@@ -484,7 +484,7 @@ void start_decoder_thread(void *data)
 	mpeg_audio_length( input );
 	
 	// Seek filehandle to the cuepoint
-	seek_to_cuepoint( input );
+	seek_to_cuepoint( input, cuepoint );
 	
 		
 	// Start the decoder thread

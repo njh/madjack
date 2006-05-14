@@ -37,7 +37,7 @@ void usage( )
 	printf("  play              Start deck playing\n");
 	printf("  pause             Pause deck\n");
 	printf("  stop              Stop Deck playback\n");
-	printf("  cue               Cue deck to start of track\n");
+	printf("  cue [<cuepoint>]  Cue deck\n");
 	printf("  eject             Eject the current track from deck\n");
 	printf("  load <filepath>   Load <filepath> into deck\n");
 	printf("  state             Get deck state\n");
