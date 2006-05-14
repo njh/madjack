@@ -60,7 +60,7 @@ OSC Interface
  /deck/play             - Start deck playing
  /deck/pause            - Pause deck
  /deck/stop             - Stop Deck playback
- /deck/cue              - Cue deck to start of track
+ /deck/cue [f]          - Cue deck
  /deck/eject            - Eject the current track from deck
  /deck/load (s)         - Load <filename> into deck
 
@@ -75,7 +75,7 @@ OSC Interface
      LOADING            - Starting to decode track
      STOPPED            - At end of track / Stopped
      ERROR              - Problem opening/decoding track
-     EMPTY				- No track loaded in deck
+     EMPTY              - No track loaded in deck
 
  /deck/get_error		- Get description of error (when in state ERROR)
   replies with:
@@ -89,16 +89,10 @@ OSC Interface
   replies with:
  /deck/position (f)
 
- /deck/set_cuepoint (f)	- Set the cuepoint for the current track (in seconds)
-
- /deck/get_cuepoint     - Get the current cuepoint (in seconds)
+ /deck/get_duration             - Get track duration (in seconds)
   replies with:
- /deck/cuepoint (f)
+ /deck/duration (f)
 
- /deck/get_filename     - Get name of track (minus suffix and path)
-  replies with:
- /deck/filename (s)
- 
  /deck/get_filepath     - Get path of track (as passed to/deck/load)
   replies with:
  /deck/filepath (s)
