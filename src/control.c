@@ -179,16 +179,6 @@ void do_play()
 void do_cue(float cuepoint)
 {
 	if (verbose) printf("-> do_cue(%f)\n", cuepoint);
-	
-	// Make sure it is in range
-	if (cuepoint < 0.0) {
-		fprintf(stderr, "Warning: cuepoint is less than zero.\n" );
-		return;
-	} else if (input_file->duration <= cuepoint) {
-		fprintf(stderr, "Warning: cuepoint is beyond end of file.\n" );
-		return;
-	}
-
 
 	// Stop first
 	if (get_state() == MADJACK_STATE_PLAYING ||

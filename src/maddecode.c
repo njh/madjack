@@ -431,6 +431,10 @@ static void seek_to_cuepoint( input_file_t *input, float cuepoint )
 			fprintf(stderr, "Warning: failed to seek to cuepoint, because frame size is unknown.\n");
 		} else if (input->samplerate==0) {
 			fprintf(stderr, "Warning: failed to seek to cuepoint, because sample rate is unknown.\n");
+		} else if (input_file->duration < cuepoint) {
+			fprintf(stderr, "Warning: failed to seek to cuepoint, because it is beyond end of file.\n" );
+		} else if (cuepoint < 0.0) {
+			fprintf(stderr, "Warning: failed to seek to cuepoint, because it is less than zero.\n" );
 		} else {
 			unsigned long frames = (cuepoint * input->samplerate) / 1152;
 			bytes = frames * input->framesize;
