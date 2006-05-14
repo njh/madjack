@@ -52,17 +52,17 @@ print "Done.\n";
 
 
 sub play_file {
-	my ($filename) = @_;
+	my ($filepath) = @_;
 
-	$madjack->load( $filename ) || warn "Failed to load";
+	$madjack->load( $filepath ) || warn "Failed to load";
 	$madjack->play();
 	
-	print "Loading: ".$madjack->get_filename();
+	print "Loading: ".$madjack->get_filepath();
 	while( $madjack->get_state() eq 'LOADING' ) { print "."; sleep 0.3; }
 	print "\n";
 	
 	if ($madjack->get_state() eq 'ERROR') {
-		warn "Failed to load: $filename";
+		warn "Failed to load: $filepath";
 		return;
 	}
 	

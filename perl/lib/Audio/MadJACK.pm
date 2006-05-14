@@ -32,7 +32,6 @@ sub new {
     	error => undef,
     	duration => undef,
     	position => undef,
-    	filename => undef,
     	filepath => undef
     };
     bless $self, $class;
@@ -56,7 +55,6 @@ sub new {
     $self->{lo}->add_method( '/deck/cuepoint', 'd', \&_cuepoint_handler, $self );
     $self->{lo}->add_method( '/deck/duration', 'd', \&_duration_handler, $self );
     $self->{lo}->add_method( '/deck/position', 'd', \&_position_handler, $self );
-    $self->{lo}->add_method( '/deck/filename', 's', \&_filename_handler, $self );
     $self->{lo}->add_method( '/deck/filepath', 's', \&_filepath_handler, $self );
     $self->{lo}->add_method( '/version', 'ss', \&_version_handler, $self );
     $self->{lo}->add_method( '/error', 's', \&_error_handler, $self );
@@ -73,8 +71,8 @@ sub new {
 
 sub load {
 	my $self=shift;
-	my ($filename) = @_;
-	return $self->_send( '/deck/load', 'LOADING|READY|ERROR', 's', $filename);
+	my ($filepath) = @_;
+	return $self->_send( '/deck/load', 'LOADING|READY|ERROR', 's', $filepath);
 }
 
 
@@ -159,19 +157,6 @@ sub get_position {
 sub _position_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
 	$userdata->{position}=$params[0];
-	return 0; # Success
-}
-
-sub get_filename {
-	my $self=shift;
-	$self->{filename} = undef;
-	$self->_wait_reply( '/deck/get_filename' );
-	return $self->{filename};
-}
-
-sub _filename_handler {
-	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{filename}=$params[0];
 	return 0; # Success
 }
 
@@ -331,9 +316,9 @@ Connect to MadJACK deck specified by C<oscurl>.
 A ping is sent to the MadJACK deck to check to see if it is there.
 If a reply is not recieved or there was an error then C<undef> is returned.
 
-=item B<load( filename )>
+=item B<load( filepath )>
 
-Send a message to the deck requesting that C<filename> is loaded.
+Send a message to the deck requesting that C<filepath> is loaded.
 Note: it is up to the developer to check to see if the file was 
 successfully loaded, by calling the C<get_state()> method.
 
@@ -412,15 +397,6 @@ C<undef> is returned.
 
 Returns the deck's position (in seconds) in the current track. 
    
-If no reply if received from the server or there is an error then 
-C<undef> is returned.
-
-=item B<get_filename()>
-
-Returns the filename of the track currently loaded in the deck.
-The filename is stripped of its path and suffix.
-
-If no track is currently loaded then an empty string is returned.
 If no reply if received from the server or there is an error then 
 C<undef> is returned.
 

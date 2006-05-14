@@ -40,15 +40,14 @@ while( $running ) {
 		} elsif ($key eq 'l') {
 			ReadMode(0);
 			print "Enter name of file to load: ";
-			my $filename = <STDIN>;
-			chomp($filename);
-			$madjack->load( $filename );
+			my $filepath = <STDIN>;
+			chomp($filepath);
+			$madjack->load( $filepath );
 			ReadMode(3);
 		} elsif ($key eq 's') {
 			$madjack->stop()
 		} elsif ($key eq 'f') {
-			print "Filename: ".$madjack->get_filename();
-			print " (".$madjack->get_filepath().")\n";
+			print "Filepath: ".$madjack->get_filepath()."\n";
 		} elsif ($key eq 'c') {
 			$madjack->cue()
 		} elsif ($key eq 'e') {
