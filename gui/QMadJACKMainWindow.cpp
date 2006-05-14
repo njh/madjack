@@ -99,6 +99,15 @@ void QMadJACKMainWindow::init()
 	pause->setText("Pause");
 	connect(pause, SIGNAL(clicked()), madjack, SLOT(pause()));
 
+	rewind = new QToolButton(this);
+	rewind->setGeometry(130, 10, 50, 50);
+	rewind->setFont(font);
+	rewind->setIcon(QIcon("icons/rewind.png"));
+	rewind->setIconSize(QSize(32, 32));
+	rewind->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
+	rewind->setText("Rewind");
+	connect(rewind, SIGNAL(clicked()), madjack, SLOT(rewind()));
+
 
 
 
@@ -111,26 +120,18 @@ void QMadJACKMainWindow::init()
 	font2.setStrikeOut(false);
 
 	cue = new QToolButton(this);
-	cue->setGeometry(130, 10, 50, 50);
+	cue->setGeometry(130, 70, 50, 50);
 	cue->setFont(font2);
 	cue->setToolButtonStyle(Qt::ToolButtonTextOnly);
 	cue->setText("Cue");
-	connect(cue, SIGNAL(clicked()), madjack, SLOT(cue()));
 
-	setcue = new QToolButton(this);
-	setcue->setGeometry(130, 70, 50, 50);
-	setcue->setFont(font2);
-	setcue->setToolButtonStyle(Qt::ToolButtonTextOnly);
-	setcue->setText("Set\nCue");
+
 
 	slider = new QSlider(Qt::Horizontal, this);
     slider->setGeometry(10, 125, 330, 25);
     slider->setTickPosition( QSlider::NoTicks );
 	slider->setEnabled( false );
-	slider->setMinimum( 0 );
-	slider->setMaximum( (int)madjack->get_duration() );
-	connect(madjack, SIGNAL(positionChanged(int)), slider, SLOT(setValue(int)));
-	connect(madjack, SIGNAL(durationChanged(int)), slider, SLOT(setMaximum(int)));
+	connect(madjack, SIGNAL(positionChanged(float)), this, SLOT(updatePosition(float)));
 	
     time = new LCDTime( this );
     time->setGeometry(190, 10, 150, 50);
@@ -149,21 +150,21 @@ void QMadJACKMainWindow::init()
 
 	url = new QLabel( this );
     url->setGeometry(10, 150, 330, 15);
-	url->setText( QString("URL: ") + madjack->get_url() );
 	url->setFont(font3);
 	url->setAlignment(Qt::AlignLeft);
+	url->setText( QString("URL: ") + madjack->get_url() );
 
 	filepath = new QLabel( this );
     filepath->setGeometry(10, 165, 330, 15);
-	filepath->setText( QString("Filepath: ") + madjack->get_filepath() );
 	filepath->setFont(font3);
 	filepath->setAlignment(Qt::AlignLeft);
+	connect(madjack, SIGNAL(filepathChanged(QString)), this, SLOT(updateFilepath(QString)));
 
 	duration = new QLabel( this );
     duration->setGeometry(10, 180, 330, 15);
-	duration->setText( QString("Duration: ") + QString::number( madjack->get_duration() ) );
 	duration->setFont(font3);
 	duration->setAlignment(Qt::AlignLeft);
+	connect(madjack, SIGNAL(durationChanged(float)), this, SLOT(updateDuration(float)));
 	
 	QFont font4;
 	font4.setPointSize(24);
@@ -180,4 +181,27 @@ void QMadJACKMainWindow::init()
 	
 }
 
+
+
+// The filepath changed
+void QMadJACKMainWindow::updateFilepath( QString newFilepath )
+{
+	filepath->setText( QString("Filepath: ") + newFilepath );
+}
+
+
+// The position changed (proxy for float->int)
+void QMadJACKMainWindow::updatePosition( float newPosition )
+{
+	slider->setValue( (int)newPosition );
+}
+
+
+// The duration changed
+void QMadJACKMainWindow::updateDuration( float newDuration )
+{
+	duration->setText( QString("Duration: ") + QString::number( newDuration ) );
+	slider->setMinimum( 0 );
+	slider->setMaximum( (int)newDuration );
+}
 

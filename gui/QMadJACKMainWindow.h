@@ -35,11 +35,17 @@
 
 class QMadJACKMainWindow : public QWidget
 {
+	Q_OBJECT;
 
 	public:
 		QMadJACKMainWindow( QMadJACK *madjack, QWidget *parent = 0);
 		~QMadJACKMainWindow();
 		
+	public slots:
+		void updateDuration( float newDuration );
+		void updatePosition( float newPosition );
+		void updateFilepath( QString newFilepath );
+
 	private:
 		void init();
 		
@@ -58,8 +64,10 @@ class QMadJACKMainWindow : public QWidget
 		QToolButton *pause;
 		QToolButton *stop;
 		QToolButton *eject;
+		QToolButton *rewind;
 		QToolButton *cue;
-		QToolButton *setcue;
+		
+
 		
 };
 

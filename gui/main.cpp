@@ -65,10 +65,11 @@ int main(int argc, char *argv[])
 	// Create main window
 	QMadJACKMainWindow window( &madjack );
 	setupMenuBar( &window );
-	window.show();
 	
 	// Start updating automatically
 	madjack.set_autoupdate( true );
+	
+	window.show();
 	
 	return app.exec();
 }
@@ -91,7 +92,6 @@ int main(int argc, char *argv[])
 	madjack.cue();
 	sleep(1);
 
-	cout << "Filename: " << madjack.get_filename() << endl;
 	cout << "Filepath: " << madjack.get_filepath() << endl;
 	
 	cout << "Deck State: " << madjack.get_state() << endl;

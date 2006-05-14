@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
 	madjack.cue();
 	sleep(1);
 
-	cout << "Filename: " << madjack.get_filename() << endl;
 	cout << "Filepath: " << madjack.get_filepath() << endl;
 	
 	cout << "Deck State: " << madjack.get_state() << endl;

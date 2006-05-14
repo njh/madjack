@@ -47,11 +47,9 @@ QMadJACK::QMadJACK( const QString &string )
 	
 	if (string.contains( QRegExp("^\\d*$") )) {
 		// Port number
-		qDebug( "is port" );
 		this->addr = lo_address_new( "localhost", (const char*)string.toLatin1() );
 	} else {
 		// URL
-		qDebug( "is url" );
 		this->addr = lo_address_new_from_url( string.toLatin1() );
 	}
 	
@@ -86,7 +84,6 @@ void QMadJACK::init()
 	lo_server_add_method( serv, "/deck/cuepoint", "f", QMadJACK::cuepoint_handler, this);
 	lo_server_add_method( serv, "/deck/duration", "f", QMadJACK::duration_handler, this);
 	lo_server_add_method( serv, "/deck/position", "f", QMadJACK::position_handler, this);
-	lo_server_add_method( serv, "/deck/filename", "s", QMadJACK::filename_handler, this);
 	lo_server_add_method( serv, "/deck/filepath", "s", QMadJACK::filepath_handler, this);
 	lo_server_add_method( serv, "/version", "ss", QMadJACK::version_handler, this);
 	lo_server_add_method( serv, "/error", "s", QMadJACK::error_handler, this);
@@ -97,7 +94,6 @@ void QMadJACK::init()
 	reply_state = QString::null;
 	reply_version = QString::null;
 	reply_error = QString::null;
-	reply_filename = QString::null;
 	reply_filepath = QString::null;
 	reply_duration = 0.0f;
 	reply_position = 0.0f;
@@ -114,6 +110,8 @@ void QMadJACK::init()
 	second_timer = new QTimer( this );
 	second_timer->setInterval( 1000 );
 	connect(second_timer, SIGNAL(timeout()), this, SLOT(update_state()));
+	connect(second_timer, SIGNAL(timeout()), this, SLOT(update_duration()));
+	connect(second_timer, SIGNAL(timeout()), this, SLOT(update_filepath()));
 
 }
 
@@ -123,29 +121,16 @@ void QMadJACK::set_autoupdate( bool autoupdate )
 	if (autoupdate) {
 		first_timer->start();
 		second_timer->start();
+		
+		// Force an update straight away
+		update_state();
+		update_position();
+		update_duration();
+		update_filepath();
+		
 	} else {
 		first_timer->stop();
 		second_timer->stop();
-	}
-}
-
-void QMadJACK::update_position()
-{
-	this->reply_position = 0.0f;
-	
-	if (this->wait_reply( "/deck/get_position" )) {
-		emit positionChanged(this->reply_position);
-		emit positionChanged((int)this->reply_position);
-	}
-}
-
-
-void QMadJACK::update_state()
-{
-	this->reply_state = "UNKNOWN";
-	
-	if (this->wait_reply( "/deck/get_state" )) {
-		emit stateChanged(this->reply_state);
 	}
 }
 
@@ -181,11 +166,24 @@ int QMadJACK::stop()
 	return this->send( "/deck/stop", desired );
 }
 
-int QMadJACK::cue()
+int QMadJACK::rewind()
 {
 	QStringList desired;
 	desired << "LOADING" << "READY";
 	return this->send( "/deck/cue", desired );
+}
+
+int QMadJACK::cue( float cuepoint )
+{
+	QStringList desired;
+	desired << "LOADING" << "READY";
+	
+	lo_message mesg = lo_message_new();
+	lo_message_add_float( mesg, cuepoint );
+	int result = this->send( "/deck/cue", desired, mesg );
+	lo_message_free( mesg );
+	
+	return result;
 }
 
 int QMadJACK::eject()
@@ -195,57 +193,61 @@ int QMadJACK::eject()
 }
 
 
+
 QString QMadJACK::get_state()
 {
-	this->reply_state = QString::null;
-	this->wait_reply( "/deck/get_state" );
+	update_state();
 	return this->reply_state;
 }
 
-int QMadJACK::set_cuepoint( float cuepoint )
+void QMadJACK::update_state()
 {
-	QStringList desired;
-
-	lo_message mesg = lo_message_new();
-	lo_message_add_float( mesg, cuepoint );
-	int result = this->send( "/deck/set_cuepoint", desired, mesg );
-	lo_message_free( mesg );
-	
-	return result;
-}
-
-float QMadJACK::get_cuepoint()
-{
-	this->reply_cuepoint = 0.0f;
-	this->wait_reply( "/deck/get_cuepoint" );
-	return this->reply_cuepoint;
+	this->reply_state = "UNKNOWN";
+	if (this->wait_reply( "/deck/get_state" )) {
+		emit stateChanged(this->reply_state);
+	}
 }
 
 float QMadJACK::get_duration()
 {
-	this->reply_duration = 0.0f;
-	this->wait_reply( "/deck/get_duration" );
+	update_duration();
 	return this->reply_duration;
+}
+
+void QMadJACK::update_duration()
+{
+	this->reply_duration = 0.0f;
+	if (this->wait_reply( "/deck/get_duration" )) {
+		emit durationChanged(this->reply_duration);
+	}
 }
 
 float QMadJACK::get_position()
 {
-	// Updated by timer
+	update_position();
 	return this->reply_position;
 }
 
-QString QMadJACK::get_filename()
+void QMadJACK::update_position()
 {
-	this->reply_filename = QString::null;
-	this->wait_reply( "/deck/get_filename" );
-	return this->reply_filename;
+	this->reply_position = 0.0f;
+	if (this->wait_reply( "/deck/get_position" )) {
+		emit positionChanged(this->reply_position);
+	}
 }
 
 QString QMadJACK::get_filepath()
 {
-	this->reply_filepath = QString::null;
-	this->wait_reply( "/deck/get_filepath" );
+	update_filepath();
 	return this->reply_filepath;
+}
+
+void QMadJACK::update_filepath()
+{
+	this->reply_filepath = QString::null;
+	if (this->wait_reply( "/deck/get_filepath" )) {
+		emit filepathChanged(this->reply_filepath);
+	}
 }
 
 QString QMadJACK::get_version()
@@ -262,16 +264,16 @@ QString QMadJACK::get_error()
 	return this->reply_error;
 }
 
+QString QMadJACK::get_url()
+{
+	return lo_address_get_url(addr);
+}
+
 int QMadJACK::ping()
 {
 	this->reply_pong = 0;
 	this->wait_reply( "/ping" );
 	return this->reply_pong;
-}
-
-QString QMadJACK::get_url()
-{
-	return lo_address_get_url(addr);
 }
 
 
@@ -403,14 +405,6 @@ int QMadJACK::position_handler(const char *, const char *,
 {
 	QMadJACK *obj = (QMadJACK*)user_data;
 	obj->reply_position = argv[0]->f;
-    return 0;
-}
-
-int QMadJACK::filename_handler(const char *, const char *, 
-		lo_arg **argv, int, lo_message, void *user_data)
-{
-	QMadJACK *obj = (QMadJACK*)user_data;
-	obj->reply_filename = &argv[0]->s;
     return 0;
 }
 

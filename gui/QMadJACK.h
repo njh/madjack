@@ -53,7 +53,6 @@ class QMadJACK : public QObject
 		float get_duration();
 		float get_position();
 		
-		QString get_filename();
 		QString get_filepath();
 		QString get_version();
 		
@@ -67,16 +66,16 @@ class QMadJACK : public QObject
 		int play();
 		int pause();
 		int stop();
-		int cue();
+		int rewind();
+		int cue( float cuepoint );
 		int eject();
 		int ping();
 
 	signals:
-		void positionChanged(float newPosition);
-		void positionChanged(int newPosition);
 		void stateChanged(QString newState);
+		void filepathChanged(QString newFilepath);
 		void durationChanged(float newDuration);
-		void durationChanged(int newDuration);
+		void positionChanged(float newPosition);
         
         
 	private:
@@ -107,9 +106,6 @@ class QMadJACK : public QObject
 		static int position_handler(const char *path, const char *types, 
 			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
-		static int filename_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
 		static int filepath_handler(const char *path, const char *types, 
 			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
@@ -123,8 +119,10 @@ class QMadJACK : public QObject
 			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
 	private slots:
-		void update_position();	// called by timer
 		void update_state();	// called by timer
+		void update_position();	// called by timer
+		void update_duration();	// called by timer
+		void update_filepath();	// called by timer
 		
 		
 	// Private variables
@@ -138,7 +136,6 @@ class QMadJACK : public QObject
 		QString		reply_state;
 		QString		reply_version;
 		QString		reply_error;
-		QString		reply_filename;
 		QString		reply_filepath;
 		float		reply_duration;
 		float		reply_position;
