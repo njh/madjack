@@ -194,22 +194,6 @@ int filepath_handler(const char *path, const char *types, lo_arg **argv, int arg
 }
 
 static
-int filename_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 lo_message msg, void *user_data)
-{
-	lo_address src = lo_message_get_source( msg );
-	lo_server serv = (lo_server)user_data;
-	int result;
-
-	// Send back reply
-	result = lo_send_from( src, serv, LO_TT_IMMEDIATE,
-	              "/deck/filename", "s", input_file->filename );
-	if (result<1) fprintf(stderr, "Error: sending reply failed: %s\n", lo_address_errstr(src));
-
-    return 0;
-}
-
-static
 int ping_handler(const char *path, const char *types, lo_arg **argv, int argc,
 		 lo_message msg, void *user_data)
 {
@@ -297,7 +281,6 @@ lo_server_thread init_osc( char *port )
 	lo_server_thread_add_method( st, "/deck/get_duration", "", duration_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_position", "", position_handler, serv);
 	lo_server_thread_add_method( st, "/deck/get_filepath", "", filepath_handler, serv);
-	lo_server_thread_add_method( st, "/deck/get_filename", "", filename_handler, serv);
 	lo_server_thread_add_method( st, "/get_error", "", get_error_handler, serv);
 	lo_server_thread_add_method( st, "/get_version", "", get_version_handler, serv);
 	lo_server_thread_add_method( st, "/ping", "", ping_handler, serv);

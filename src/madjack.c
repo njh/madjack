@@ -364,7 +364,7 @@ static
 void usage()
 {
 	printf("%s version %s\n\n", PACKAGE_NAME, PACKAGE_VERSION);
-	printf("Usage: %s [options] [<filename>]\n", PACKAGE_NAME);
+	printf("Usage: %s [options] [<filepath>]\n", PACKAGE_NAME);
 	printf("   -a            Automatically connect JACK ports\n");
 	printf("   -l <port>     Connect left output to this input port\n");
 	printf("   -r <port>     Connect right output to this input port\n");
@@ -423,7 +423,7 @@ int main(int argc, char *argv[])
     argc -= optind;
     argv += optind;
     if (argc>1) {
-    	fprintf(stderr, "%s only takes a single, optional, filename argument.\n", PACKAGE_NAME);
+    	fprintf(stderr, "%s only takes a single, optional, filepath argument.\n", PACKAGE_NAME);
     	usage();
 	}
 

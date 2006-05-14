@@ -78,24 +78,24 @@ set_input_mode (void)
 
 // Read in the name of a file from STDIN
 static
-char* read_filename()
+char* read_filepath()
 {
-	char *filename = malloc(MAX_FILENAME_LEN);
+	char *filepath = malloc(MAX_FILENAME_LEN);
 	int i;
 	
 	reset_input_mode();
 
 	printf("Enter name of file to load: ");
-	fgets( filename, MAX_FILENAME_LEN-1, stdin );
+	fgets( filepath, MAX_FILENAME_LEN-1, stdin );
 	
-	// Remove carrage return from end of filename
+	// Remove carrage return from end of filepath
 	for(i=0; i<MAX_FILENAME_LEN; i++) {
-		if (filename[i]==10 || filename[i]==13) filename[i]=0;
+		if (filepath[i]==10 || filepath[i]==13) filepath[i]=0;
 	}
 
 	set_input_mode( );
 	
-	return filename;
+	return filepath;
 }
 
 // Read a cuepoint from STDIN
@@ -152,35 +152,6 @@ char* build_fullpath( const char* root, const char* name )
 	
 	return filepath;
 }
-
-
-static
-void extract_filename( input_file_t *input )
-{
-	int i;
-	
-	// Check pointer is valid
-	if (input==NULL) return;
-	
-	// Find the last slash by working backwards from the end
-	for(i=strlen(input->filepath); i>=1 && input->filepath[i-1]!='/'; i-- );
-	
-	// Copy it across
-	strncpy( input->filename, input->filepath+i, MAX_FILENAME_LEN );
-	
-	// Remove the suffix
-	for(i=strlen(input->filename); i>=1; i-- ) {
-		if (input->filename[i] == '.') {
-			input->filename[i] = '\0';
-			break;
-		}
-	}
-	
-	if (verbose) printf("filename: %s\n", input->filename);
-
-}
-
-
 
 
 // Start playing
@@ -327,7 +298,6 @@ void do_eject()
 			input_file->file = NULL;
 			free(input_file->filepath);
 			input_file->filepath = NULL;
-			input_file->filename[0] = '\0';
 		}
 		
 		// Reset positions
@@ -385,9 +355,6 @@ void do_load( const char* filepath )
 		input_file->filepath = strdup( filepath );
 		free( fullpath );
 
-		// Extract the filename (minus extension) from the path
-		extract_filename( input_file );
-		
 		// Cue up the new file	
 		do_cue();
 	}
@@ -441,9 +408,9 @@ void read_keypress()
 		
 		// Load
 		case 'l': {
-			char* filename = read_filename();
-			do_load( filename );
-			free( filename );
+			char* filepath = read_filepath();
+			do_load( filepath );
+			free( filepath );
 			break;
 		}
 

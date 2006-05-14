@@ -39,11 +39,10 @@ void usage( )
 	printf("  stop              Stop Deck playback\n");
 	printf("  cue               Cue deck to start of track\n");
 	printf("  eject             Eject the current track from deck\n");
-	printf("  load <filename>   Load <filename> into deck\n");
+	printf("  load <filepath>   Load <filepath> into deck\n");
 	printf("  state             Get deck state\n");
 	printf("  position          Get playback position (in seconds)\n");
 	printf("  filepath          Get path of the currently loaded file\n");
-	printf("  filename          Get name (minus path/suffix) of file\n");
 	printf("  ping              Check deck is still there\n");
 	exit(1);
 }
@@ -76,15 +75,6 @@ int filepath_handler(const char *path, const char *types, lo_arg **argv, int arg
 		 lo_message msg, void *user_data)
 {
 	printf("Filepath: %s\n", &argv[0]->s);
-    return 0;
-}
-
-
-static
-int filename_handler(const char *path, const char *types, lo_arg **argv, int argc,
-		 lo_message msg, void *user_data)
-{
-	printf("Filename: %s\n", &argv[0]->s);
     return 0;
 }
 
@@ -148,7 +138,6 @@ int main(int argc, char *argv[])
 	lo_server_add_method( serv, "/deck/state", "s", state_handler, addr);
 	lo_server_add_method( serv, "/deck/position", "f", position_handler, addr);
 	lo_server_add_method( serv, "/deck/filepath", "s", filepath_handler, addr);
-	lo_server_add_method( serv, "/deck/filename", "s", filename_handler, addr);
 	lo_server_add_method( serv, "/pong", "", ping_handler, addr);
 
 
@@ -175,9 +164,6 @@ int main(int argc, char *argv[])
 		need_reply=1;
 	} else if (strcmp( argv[0], "filepath") == 0) {
 		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_filepath", "");
-		need_reply=1;
-	} else if (strcmp( argv[0], "filename") == 0) {
-		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/get_filename", "");
 		need_reply=1;
 	} else if (strcmp( argv[0], "ping") == 0) {
 		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/ping", "");
