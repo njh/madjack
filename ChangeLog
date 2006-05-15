@@ -1,8 +1,18 @@
+Mon May 15 15:17:19 BST 2006 Nicholas J. Humfrey <njh@aelius.com>
+
+  * New Release (version 0.5)
+  * Added support for /cue f <cuepoint>  (cue to specific point)
+  * Added QMadJACK C++ client class for controlling MadJACK server
+  * Added a basic GUI, written with QT4
+  * Removed support for /deck/get_filename
+  * Very basic Jack Transport syncing
+
 Tue May  2 01:37:07 BST 2006 Nicholas J. Humfrey <njh@aelius.com>
 
   * Added support for /get_error   (returns error message when state=ERROR)
   * Added support for /get_version (returns package name and version)
   * Added support for /deck/get_duration (returns duration of track in seconds)
+  * Added better ID3 tag detection (so they can be ignored!)
 
 
 Thu Dec 29 17:19:12 GMT 2005 Nicholas J. Humfrey <njh@aelius.com>
