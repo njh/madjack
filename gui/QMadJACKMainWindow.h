@@ -45,6 +45,7 @@ class QMadJACKMainWindow : public QWidget
 		void updateDuration( float newDuration );
 		void updatePosition( float newPosition );
 		void updateFilepath( QString newFilepath );
+		void askForCuepoint();
 
 	private:
 		void init();

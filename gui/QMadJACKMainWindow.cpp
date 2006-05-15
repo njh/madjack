@@ -23,6 +23,7 @@
 
 #include <QDebug>
 #include <QFont>
+#include <QInputDialog>
 #include <QApplication>
 
 #include "QMadJACKMainWindow.h"
@@ -31,8 +32,8 @@
 QMadJACKMainWindow::QMadJACKMainWindow(  QMadJACK *in_madjack, QWidget *parent )
 		: QWidget(parent)
 {
+	Q_ASSERT( in_madjack != NULL );
 	madjack = in_madjack;
-
 	init();
 }
 
@@ -40,6 +41,19 @@ QMadJACKMainWindow::QMadJACKMainWindow(  QMadJACK *in_madjack, QWidget *parent )
 QMadJACKMainWindow::~QMadJACKMainWindow()
 {
 
+	delete slider;
+	delete time;
+	delete url;
+	delete filepath;
+	delete duration;
+	delete state;
+		
+	delete play;
+	delete pause;
+	delete stop;
+	delete eject;
+	delete rewind;
+	delete cue;
 
 }
 
@@ -52,20 +66,10 @@ void QMadJACKMainWindow::init()
     this->setFixedSize(350, 200);
     this->setWindowTitle( qApp->applicationName() );
 
-//	connect(slider, SIGNAL(valueChanged(int)), lcd, SLOT(display(int)));
-	
-	QFont font;
-	font.setPointSize(9);
-	font.setBold(false);
-	font.setItalic(false);
-	font.setUnderline(false);
-	font.setWeight(50);
-	font.setStrikeOut(false);
-	
-	
+
 	play = new QToolButton(this);
 	play->setGeometry(10, 10, 50, 50);
-	play->setFont(font);
+	play->setFont(QFont("", 9, QFont::Normal, false));
 	play->setIcon(QIcon("icons/play.png"));
 	play->setIconSize(QSize(32, 32));
 	play->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -74,7 +78,7 @@ void QMadJACKMainWindow::init()
 	
 	stop = new QToolButton(this);
 	stop->setGeometry(70, 10, 50, 50);
-	stop->setFont(font);
+	stop->setFont(QFont("", 9, QFont::Normal, false));
 	stop->setIcon(QIcon("icons/stop.png"));
 	stop->setIconSize(QSize(32, 32));
 	stop->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -83,7 +87,7 @@ void QMadJACKMainWindow::init()
 	
 	eject = new QToolButton(this);
 	eject->setGeometry(70, 70, 50, 50);
-	eject->setFont(font);
+	eject->setFont(QFont("", 9, QFont::Normal, false));
 	eject->setIcon(QIcon("icons/eject.png"));
 	eject->setIconSize(QSize(32, 32));
 	eject->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -92,7 +96,7 @@ void QMadJACKMainWindow::init()
 	
 	pause = new QToolButton(this);
 	pause->setGeometry(10, 70, 50, 50);
-	pause->setFont(font);
+	pause->setFont(QFont("", 9, QFont::Normal, false));
 	pause->setIcon(QIcon("icons/pause.png"));
 	pause->setIconSize(QSize(32, 32));
 	pause->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
@@ -101,83 +105,61 @@ void QMadJACKMainWindow::init()
 
 	rewind = new QToolButton(this);
 	rewind->setGeometry(130, 10, 50, 50);
-	rewind->setFont(font);
+	rewind->setFont(QFont("", 9, QFont::Normal, false));
 	rewind->setIcon(QIcon("icons/rewind.png"));
 	rewind->setIconSize(QSize(32, 32));
 	rewind->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
 	rewind->setText("Rewind");
-	connect(rewind, SIGNAL(clicked()), madjack, SLOT(rewind()));
-
-
-
-
-	QFont font2;
-	font2.setPointSize(14);
-	font2.setBold(true);
-	font2.setItalic(false);
-	font2.setUnderline(false);
-	font2.setWeight(80);
-	font2.setStrikeOut(false);
+	connect(rewind, SIGNAL(clicked()), madjack, SLOT(cue()));
 
 	cue = new QToolButton(this);
 	cue->setGeometry(130, 70, 50, 50);
-	cue->setFont(font2);
+	cue->setFont(QFont("", 14, QFont::Bold, false));
 	cue->setToolButtonStyle(Qt::ToolButtonTextOnly);
 	cue->setText("Cue");
+	connect(cue, SIGNAL(clicked()), this, SLOT(askForCuepoint()));
 
 
+
+
+    time = new LCDTime( this );
+    time->setGeometry(190, 10, 150, 50);
+    time->setSegmentStyle(QLCDNumber::Filled);
+	time->display(0.0f);
+	connect(madjack, SIGNAL(positionChanged(float)), time, SLOT(display(float)));
+	
+	state = new QLabel( this );
+    state->setGeometry(190, 70, 150, 50);
+	state->setFont(QFont("", 24, QFont::Bold, false));
+	state->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+	connect(madjack, SIGNAL(stateChanged(QString)), state, SLOT(setText(QString)));
 
 	slider = new QSlider(Qt::Horizontal, this);
     slider->setGeometry(10, 125, 330, 25);
     slider->setTickPosition( QSlider::NoTicks );
 	slider->setEnabled( false );
 	connect(madjack, SIGNAL(positionChanged(float)), this, SLOT(updatePosition(float)));
-	
-    time = new LCDTime( this );
-    time->setGeometry(190, 10, 150, 50);
-    time->setSegmentStyle(QLCDNumber::Filled);
-	time->display(0.0f);
-	connect(madjack, SIGNAL(positionChanged(float)), time, SLOT(display(float)));
 
 
-	QFont font3;
-	font3.setPointSize(10);
-	font3.setBold(true);
-	font3.setItalic(false);
-	font3.setUnderline(false);
-	font3.setWeight(80);
-	font3.setStrikeOut(false);
+
 
 	url = new QLabel( this );
     url->setGeometry(10, 150, 330, 15);
-	url->setFont(font3);
+	url->setFont( QFont("Geneva", 10, QFont::Normal, false) );
 	url->setAlignment(Qt::AlignLeft);
 	url->setText( QString("URL: ") + madjack->get_url() );
 
 	filepath = new QLabel( this );
     filepath->setGeometry(10, 165, 330, 15);
-	filepath->setFont(font3);
+	filepath->setFont( QFont("Geneva", 10, QFont::Normal, false) );
 	filepath->setAlignment(Qt::AlignLeft);
 	connect(madjack, SIGNAL(filepathChanged(QString)), this, SLOT(updateFilepath(QString)));
 
 	duration = new QLabel( this );
     duration->setGeometry(10, 180, 330, 15);
-	duration->setFont(font3);
+	duration->setFont( QFont("Geneva", 10, QFont::Normal, false) );
 	duration->setAlignment(Qt::AlignLeft);
 	connect(madjack, SIGNAL(durationChanged(float)), this, SLOT(updateDuration(float)));
-	
-	QFont font4;
-	font4.setPointSize(24);
-	font4.setBold(true);
-	font4.setItalic(false);
-	font4.setUnderline(false);
-	font4.setWeight(80);
-	font4.setStrikeOut(false);
-	state = new QLabel( this );
-    state->setGeometry(190, 70, 150, 50);
-	state->setFont(font4);
-	state->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	connect(madjack, SIGNAL(stateChanged(QString)), state, SLOT(setText(QString)));
 	
 }
 
@@ -198,10 +180,37 @@ void QMadJACKMainWindow::updatePosition( float newPosition )
 
 
 // The duration changed
-void QMadJACKMainWindow::updateDuration( float newDuration )
+void QMadJACKMainWindow::updateDuration( float time )
 {
-	duration->setText( QString("Duration: ") + QString::number( newDuration ) );
+	int mins = (int)(time/60);
+	int secs = (int)(time - (mins*60));
+	int hsec = (int)((float)(time - (int)time) * 10); // *FIXME* round() ?
+	
+	QString str;
+	str.sprintf( "%2.2d:%2.2d.%1.1d", mins, secs, hsec );
+	duration->setText( QString("Duration: ") + str );
+	
 	slider->setMinimum( 0 );
-	slider->setMaximum( (int)newDuration );
+	slider->setMaximum( (int)time );
+}
+
+
+
+// Ask for cue point
+void QMadJACKMainWindow::askForCuepoint( )
+{
+	bool ok;
+	double cuepoint = QInputDialog::getDouble(
+		this,						// parent
+		"Cue to position",			// window title
+		"Cue to position (in seconds):",
+		0.0f, 						// default value
+		0.0f,						// minimum value
+		madjack->get_duration(),	// Maximum value
+		2,							// decimal places
+		&ok,						// result (ok/cancel)
+		Qt::Sheet );
+
+	if (ok) madjack->cue( cuepoint );
 }
 

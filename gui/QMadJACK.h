@@ -48,8 +48,6 @@ class QMadJACK : public QObject
 		
 		void set_autoupdate( bool autoupdate );
 		
-		int set_cuepoint( float cuepoint );
-		float get_cuepoint();
 		float get_duration();
 		float get_position();
 		
@@ -66,8 +64,7 @@ class QMadJACK : public QObject
 		int play();
 		int pause();
 		int stop();
-		int rewind();
-		int cue( float cuepoint );
+		int cue( float cuepoint = 0.0f );
 		int eject();
 		int ping();
 
@@ -95,9 +92,6 @@ class QMadJACK : public QObject
 		static void err_hander( int num, const char *msg, const char *where );
 		
 		static int state_handler(const char *path, const char *types, 
-			lo_arg **argv, int argc, lo_message msg, void *user_data);
-
-		static int cuepoint_handler(const char *path, const char *types, 
 			lo_arg **argv, int argc, lo_message msg, void *user_data);
 
 		static int duration_handler(const char *path, const char *types, 
@@ -139,7 +133,6 @@ class QMadJACK : public QObject
 		QString		reply_filepath;
 		float		reply_duration;
 		float		reply_position;
-		float		reply_cuepoint;
 		int			reply_pong;
 		
 };

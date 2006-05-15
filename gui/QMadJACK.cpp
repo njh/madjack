@@ -81,7 +81,6 @@ void QMadJACK::init()
 	
 	
 	lo_server_add_method( serv, "/deck/state", "s", QMadJACK::state_handler, this);
-	lo_server_add_method( serv, "/deck/cuepoint", "f", QMadJACK::cuepoint_handler, this);
 	lo_server_add_method( serv, "/deck/duration", "f", QMadJACK::duration_handler, this);
 	lo_server_add_method( serv, "/deck/position", "f", QMadJACK::position_handler, this);
 	lo_server_add_method( serv, "/deck/filepath", "s", QMadJACK::filepath_handler, this);
@@ -97,7 +96,6 @@ void QMadJACK::init()
 	reply_filepath = QString::null;
 	reply_duration = 0.0f;
 	reply_position = 0.0f;
-	reply_cuepoint = 0.0f;
 	reply_pong = 0;
 	
 	
@@ -164,13 +162,6 @@ int QMadJACK::stop()
 {
 	QStringList desired( "STOPPED" );
 	return this->send( "/deck/stop", desired );
-}
-
-int QMadJACK::rewind()
-{
-	QStringList desired;
-	desired << "LOADING" << "READY";
-	return this->send( "/deck/cue", desired );
 }
 
 int QMadJACK::cue( float cuepoint )
@@ -381,14 +372,6 @@ int QMadJACK::state_handler(const char *, const char *,
 {
 	QMadJACK *obj = (QMadJACK*)user_data;
 	obj->reply_state = &argv[0]->s;
-    return 0;
-}
-
-int QMadJACK::cuepoint_handler(const char *, const char *, 
-		lo_arg **argv, int, lo_message, void *user_data)
-{
-	QMadJACK *obj = (QMadJACK*)user_data;
-	obj->reply_cuepoint = argv[0]->f;
     return 0;
 }
 
