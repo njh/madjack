@@ -1,5 +1,11 @@
 Revision history for MadJACK perl interface
 
+0.04  Mon May 15 15:41:19 BST 2006
+	Added support for:
+		/deck/get_duration
+		/deck/get_version
+		/deck/cue [f]
+
 0.03  Fri Apr 21 22:51:47 BST 2006
 	Added Makefile.PL
 
