@@ -50,6 +50,13 @@ while( $running ) {
 			print "Filepath: ".$madjack->get_filepath()."\n";
 		} elsif ($key eq 'c') {
 			$madjack->cue()
+		} elsif ($key eq 'C') {
+			ReadMode(0);
+			print "Enter cue point (in seconds): ";
+			my $cuepoint = <STDIN>;
+			chomp($cuepoint);
+			$madjack->cue( $cuepoint );
+			ReadMode(3);
 		} elsif ($key eq 'e') {
 			$madjack->eject()
 		} elsif ($key eq 'p') {

@@ -26,7 +26,6 @@ sub new {
     # Bless the hash into an object
     my $self = { 
     	pong => 0,
-    	cuepoint => undef,
     	state => undef,
     	version => undef,
     	error => undef,
@@ -52,7 +51,6 @@ sub new {
     
     # Add reply handlers
     $self->{lo}->add_method( '/deck/state', 's', \&_state_handler, $self );
-    $self->{lo}->add_method( '/deck/cuepoint', 'd', \&_cuepoint_handler, $self );
     $self->{lo}->add_method( '/deck/duration', 'd', \&_duration_handler, $self );
     $self->{lo}->add_method( '/deck/position', 'd', \&_position_handler, $self );
     $self->{lo}->add_method( '/deck/filepath', 's', \&_filepath_handler, $self );
@@ -93,7 +91,12 @@ sub stop {
 
 sub cue {
 	my $self=shift;
-	return $self->_send( '/deck/cue', 'LOADING|READY');
+	my ($cuepoint) = @_;
+	if (defined $cuepoint) {
+		return $self->_send( '/deck/cue', 'LOADING|READY', 'd', $cuepoint);
+	} else {
+		return $self->_send( '/deck/cue', 'LOADING|READY');
+	}
 }
 
 sub eject {
@@ -112,25 +115,6 @@ sub get_state {
 sub _state_handler {
 	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
 	$userdata->{state}=$params[0];
-	return 0; # Success
-}
-
-sub set_cuepoint {
-	my $self=shift;
-	my ($cuepoint) = @_;
-	return $self->_send( '/deck/set_cuepoint', undef, 'd', $cuepoint);
-}
-
-sub get_cuepoint {
-	my $self=shift;
-	$self->{cuepoint} = undef;
-	$self->_wait_reply( '/deck/get_cuepoint' );
-	return $self->{cuepoint};
-}
-
-sub _cuepoint_handler {
-	my ($serv, $mesg, $path, $typespec, $userdata, @params) = @_;
-	$userdata->{cuepoint}=$params[0];
 	return 0; # Success
 }
 
@@ -342,9 +326,12 @@ Tell the deck to stop decoding and playback of the current track.
 
 Returns 1 if command was successfully received or 0 on error.
 
-=item B<cue()>
+=item B<cue( [$cuepoint] )>
 
-Tell the deck to start decoding from the cue point.
+Tell the deck to start decoding from C<$cuepoint>, which 
+is the position in the track in seconds. If no C<$cuepoint>
+is specified, the the deck will start decoding from the start 
+of the track.
 
 Returns 1 if command was successfully received or 0 on error.
 
@@ -377,14 +364,6 @@ Returns the a string describing the current error (if state is ERROR).
 =item B<get_version()>
 
 Returns the version number of the MadJACK server.
-
-=item B<set_cuepoint( secs )>
-
-Set the cuepoint for the current track.
-
-=item B<get_cuepoint()>
-
-Returns the current cuepoint (in seconds)
 
 =item B<get_duration()>
 
