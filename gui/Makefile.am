@@ -11,8 +11,15 @@ QTHEADERS = \
 	LCDTime.h \
 	QMadJACK.h \
 	QMadJACKMainWindow.h
+	
+QTICONS = \
+	icons/eject.png \
+	icons/pause.png  \
+	icons/play.png  \
+	icons/stop.png 
 
-EXTRA_DIST = $(QTTARGET).pro $(QTSOURCES) $(QTHEADERS)
+
+EXTRA_DIST = $(QTTARGET).pro $(QTSOURCES) $(QTHEADERS) $(QTICONS)
 
 
 
