@@ -32,7 +32,7 @@
 
 
 
-
+/*
 QMenuBar* setupMenuBar( QWidget *window )
 {
 	// Create menubar
@@ -46,7 +46,7 @@ QMenuBar* setupMenuBar( QWidget *window )
 	
 	return menubar;
 }
-    
+*/  
     
 int main(int argc, char *argv[])
 {
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	
 	// Create main window
 	QMadJACKMainWindow window( &madjack );
-	setupMenuBar( &window );
+	//setupMenuBar( &window );
 	
 	// Start updating automatically
 	madjack.set_autoupdate( true );
