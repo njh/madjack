@@ -143,25 +143,43 @@ int QMadJACK::load( const QString &filepath )
 	int result = this->send( "/deck/load", desired, mesg );
 	lo_message_free( mesg );
 	
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+	
 	return result;
 }
 
 int QMadJACK::play()
 {
 	QStringList desired( "PLAYING" );
-	return this->send( "/deck/play", desired );
+	int result = this->send( "/deck/play", desired );
+	
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+
+	return result;	
 }
 
 int QMadJACK::pause()
 {
 	QStringList desired( "PAUSED" );
-	return this->send( "/deck/pause", desired );
+	int result = this->send( "/deck/pause", desired );
+	
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+
+	return result;	
 }
 
 int QMadJACK::stop()
 {
 	QStringList desired( "STOPPED" );
-	return this->send( "/deck/stop", desired );
+	int result = this->send( "/deck/stop", desired );
+	
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+
+	return result;	
 }
 
 int QMadJACK::cue( float cuepoint )
@@ -174,20 +192,31 @@ int QMadJACK::cue( float cuepoint )
 	int result = this->send( "/deck/cue", desired, mesg );
 	lo_message_free( mesg );
 	
-	return result;
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+
+	return result;	
 }
 
 int QMadJACK::eject()
 {
 	QStringList desired( "EMPTY" );
-	return this->send( "/deck/eject", desired );
+	int result = this->send( "/deck/eject", desired );
+	
+	// Notify of possible change of state
+	emit stateChanged(this->reply_state);
+
+	return result;	
 }
 
 
 
 QString QMadJACK::get_state()
 {
-	update_state();
+	// get_state doesn't emit, so that 
+	// we don't get stuck in silly loops
+	this->reply_state = "UNKNOWN";
+	this->wait_reply( "/deck/get_state" );
 	return this->reply_state;
 }
 

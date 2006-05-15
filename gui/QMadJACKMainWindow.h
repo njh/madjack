@@ -42,17 +42,18 @@ class QMadJACKMainWindow : public QWidget
 		~QMadJACKMainWindow();
 		
 	public slots:
+		void updateState( QString newState );
 		void updateDuration( float newDuration );
 		void updatePosition( float newPosition );
 		void updateFilepath( QString newFilepath );
 		void askForCuepoint();
+		void askForFile();
 
 	private:
 		void init();
 		
 		
 		QMadJACK *madjack;
-		
 		
 		QSlider *slider;
 		LCDTime *time;
@@ -65,10 +66,8 @@ class QMadJACKMainWindow : public QWidget
 		QToolButton *pause;
 		QToolButton *stop;
 		QToolButton *eject;
-		QToolButton *rewind;
 		QToolButton *cue;
-		
-
+		QToolButton *load;
 		
 };
 

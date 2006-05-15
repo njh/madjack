@@ -24,6 +24,8 @@
 #include <QDebug>
 #include <QFont>
 #include <QInputDialog>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QApplication>
 
 #include "QMadJACKMainWindow.h"
@@ -41,19 +43,19 @@ QMadJACKMainWindow::QMadJACKMainWindow(  QMadJACK *in_madjack, QWidget *parent )
 QMadJACKMainWindow::~QMadJACKMainWindow()
 {
 
+	delete play;
+	delete pause;
+	delete stop;
+	delete eject;
+	delete cue;
+	delete load;
+
 	delete slider;
 	delete time;
 	delete url;
 	delete filepath;
 	delete duration;
 	delete state;
-		
-	delete play;
-	delete pause;
-	delete stop;
-	delete eject;
-	delete rewind;
-	delete cue;
 
 }
 
@@ -65,9 +67,8 @@ void QMadJACKMainWindow::init()
 {
     this->setFixedSize(350, 200);
     this->setWindowTitle( qApp->applicationName() );
-
-
-	play = new QToolButton(this);
+    
+ 	play = new QToolButton(this);
 	play->setGeometry(10, 10, 50, 50);
 	play->setFont(QFont("", 9, QFont::Normal, false));
 	play->setIcon(QIcon("icons/play.png"));
@@ -103,21 +104,19 @@ void QMadJACKMainWindow::init()
 	pause->setText("Pause");
 	connect(pause, SIGNAL(clicked()), madjack, SLOT(pause()));
 
-	rewind = new QToolButton(this);
-	rewind->setGeometry(130, 10, 50, 50);
-	rewind->setFont(QFont("", 9, QFont::Normal, false));
-	rewind->setIcon(QIcon("icons/rewind.png"));
-	rewind->setIconSize(QSize(32, 32));
-	rewind->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-	rewind->setText("Rewind");
-	connect(rewind, SIGNAL(clicked()), madjack, SLOT(cue()));
-
 	cue = new QToolButton(this);
-	cue->setGeometry(130, 70, 50, 50);
+	cue->setGeometry(130, 10, 50, 50);
 	cue->setFont(QFont("", 14, QFont::Bold, false));
 	cue->setToolButtonStyle(Qt::ToolButtonTextOnly);
 	cue->setText("Cue");
 	connect(cue, SIGNAL(clicked()), this, SLOT(askForCuepoint()));
+
+	load = new QToolButton(this);
+	load->setGeometry(130, 70, 50, 50);
+	load->setFont(QFont("", 14, QFont::Bold, false));
+	load->setToolButtonStyle(Qt::ToolButtonTextOnly);
+	load->setText("Load");
+	connect(load, SIGNAL(clicked()), this, SLOT(askForFile()));
 
 
 
@@ -132,7 +131,7 @@ void QMadJACKMainWindow::init()
     state->setGeometry(190, 70, 150, 50);
 	state->setFont(QFont("", 24, QFont::Bold, false));
 	state->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
-	connect(madjack, SIGNAL(stateChanged(QString)), state, SLOT(setText(QString)));
+	connect(madjack, SIGNAL(stateChanged(QString)), this, SLOT(updateState(QString)));
 
 	slider = new QSlider(Qt::Horizontal, this);
     slider->setGeometry(10, 125, 330, 25);
@@ -169,6 +168,24 @@ void QMadJACKMainWindow::init()
 void QMadJACKMainWindow::updateFilepath( QString newFilepath )
 {
 	filepath->setText( QString("Filepath: ") + newFilepath );
+}
+
+// The state has changed
+void QMadJACKMainWindow::updateState( QString newState )
+{
+	state->setText( newState );
+	
+	if (newState=="ERROR") {
+	
+		// Ejecting causes the error to go away
+		madjack->eject();
+
+		QMessageBox::critical(
+			this,					// parent
+			"MadJACK server error",	// caption
+			madjack->get_error()	// text
+		);
+	}
 }
 
 
@@ -213,4 +230,21 @@ void QMadJACKMainWindow::askForCuepoint( )
 
 	if (ok) madjack->cue( cuepoint );
 }
+
+
+// Ask for a file to load
+void QMadJACKMainWindow::askForFile( )
+{
+	QString filepath = QFileDialog::getOpenFileName(
+						this,
+						"Choose a track to load: ",
+						QString(),
+						"MPEG Audio Files (*.mp3 *.mp2 *.mp1)");
+	
+    if (!filepath.isEmpty()) {
+		madjack->load( filepath );
+    }
+	
+}
+
 
