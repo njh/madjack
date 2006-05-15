@@ -49,6 +49,9 @@ class QMadJACKMainWindow : public QWidget
 		void askForCuepoint();
 		void askForFile();
 
+	protected:
+		virtual void keyPressEvent( QKeyEvent * event );
+
 	private:
 		void init();
 		

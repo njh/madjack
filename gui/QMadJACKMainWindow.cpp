@@ -27,7 +27,7 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
-
+#include <QKeyEvent>
 #include "QMadJACKMainWindow.h"
 
 
@@ -246,5 +246,39 @@ void QMadJACKMainWindow::askForFile( )
     }
 	
 }
+
+
+
+// Simulate button clicks with key presses
+void QMadJACKMainWindow::keyPressEvent( QKeyEvent * event )
+{
+	
+	// Ignore repat key presses
+	if (event->isAutoRepeat()) return;
+
+	switch( event->key() ) {
+		case Qt::Key_Escape: qApp->quit(); break;
+		
+		case Qt::Key_E: eject->click(); break;
+		case Qt::Key_L: load->click(); break;
+		case Qt::Key_S: stop->click(); break;
+		case Qt::Key_C: cue->click(); break;
+		
+		case Qt::Key_Space:
+		case Qt::Key_P:
+			if (madjack->get_state() == "PLAYING") {
+				pause->click();
+			} else {
+				play->click();
+			}
+		break;
+		
+		default:
+			qApp->beep();
+		break;
+	}
+}
+
+
 
 
