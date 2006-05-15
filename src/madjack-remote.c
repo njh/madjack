@@ -37,7 +37,7 @@ void usage( )
 	printf("  play              Start deck playing\n");
 	printf("  pause             Pause deck\n");
 	printf("  stop              Stop Deck playback\n");
-	printf("  cue [<cuepoint>]  Cue deck\n");
+	printf("  cue [<cuepoint>]  Cue deck (option cuepoint in seconds)\n");
 	printf("  eject             Eject the current track from deck\n");
 	printf("  load <filepath>   Load <filepath> into deck\n");
 	printf("  state             Get deck state\n");
@@ -149,7 +149,13 @@ int main(int argc, char *argv[])
 	} else if (strcmp( argv[0], "stop") == 0) {
 		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/stop", "");
 	} else if (strcmp( argv[0], "cue") == 0) {
-		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/cue", "");
+		// Check for argument
+		if (argc>=2) {
+			float cuepoint = atof( argv[1] );
+			result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/cue", "f", cuepoint);
+		} else {
+			result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/cue", "");
+		}
 	} else if (strcmp( argv[0], "eject") == 0) {
 		result = lo_send_from(addr, serv, LO_TT_IMMEDIATE, "/deck/eject", "");
 	} else if (strcmp( argv[0], "load") == 0) {

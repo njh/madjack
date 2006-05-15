@@ -43,6 +43,7 @@ MadJACK accepts the following keys on
   e: Eject current track
   s: Stop Deck
   c: Cue deck to start of track
+  C: Cue to specified time
   q: Quit MadJack
 
 
@@ -51,7 +52,7 @@ Command Line Interface
 
 madjack_remote <command>
 
- play, pause, stop, cue, eject, load <filename>, status, position, filename, filepath, ping
+ play, pause, stop, cue [<cuepoint>], eject, load <filename>, status, position, filepath, ping
 
 
 OSC Interface
@@ -60,7 +61,7 @@ OSC Interface
  /deck/play             - Start deck playing
  /deck/pause            - Pause deck
  /deck/stop             - Stop Deck playback
- /deck/cue [f]          - Cue deck
+ /deck/cue [f]          - Cue deck, with optional cue point (in seconds)
  /deck/eject            - Eject the current track from deck
  /deck/load (s)         - Load <filename> into deck
 

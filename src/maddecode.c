@@ -440,6 +440,8 @@ static void seek_to_cuepoint( input_file_t *input, float cuepoint )
 			bytes = frames * input->framesize;
 			input->position = (1152.0f * frames) / input->samplerate;
 		}
+	} else {
+		input->position = 0.0f;
 	}
 
 	// Perform the seek
@@ -473,10 +475,6 @@ void start_decoder_thread(void *data, float cuepoint)
 	// Signal the thread to run
 	terminate_decoder_thread = 0;
 
-	// Reset the position in track
-	input_file->position = 0.0;
-	input_file->duration = 0.0;
-	
 	// Empty out the read buffer
 	input->buffer_used = 0;
 	
