@@ -2,28 +2,28 @@ MadJACK TODO List
 =================
 
 In order of priority:
- 
- - Problem with (one channel) turning to static during plackback?
- 
- - Make madjack close down properly when jackd goes away
- 
- - Add Jack Transport support
 
  - Write manpages for madjack and madjack-remote
  
  - resample audio that has different samplerate to jack
  
- - allow seeking to specific position?
- 
- - more accurate converting of MAD's fixed numbers to 32bit floats ?
- 
- - better checking of source of replies in OSC two way communication
+ - adjust playback speed/rate
+
+ - optimise QMadJACK class to send fewer OSC messages
+     - cache calls to get_foo()
+     - slow first timer down when not playing
 
  - make pause/play smoother (rapid fade?)
  
- - adjust playback speed/rate
-
- - simple GUI
+ - better checking of source of replies in OSC two way communication
+ 
+ - Problem with (one channel) turning to static during plackback?
+ 
+ - Make madjack close down properly when jackd goes away (in some cases)
+ 
+ - Add Jack Transport support
+ 
+ - more accurate converting of MAD's fixed numbers to 32bit floats ?
 
 
 
