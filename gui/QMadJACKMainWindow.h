@@ -75,6 +75,5 @@ class QMadJACKMainWindow : public QWidget
 };
 
 
-
-
 #endif
+
