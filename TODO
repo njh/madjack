@@ -29,5 +29,5 @@ In order of priority:
 
 
  - Add support for other formats
-   (libsndfile, CD Player?, Ogg Vorbis, FLAC...)
+   (libsndfile, CD Player?, Ogg Vorbis, FLAC, Musepack ...)
    and rename to Multiformat Audio Deck ?
