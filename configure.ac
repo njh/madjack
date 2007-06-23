@@ -7,12 +7,12 @@ dnl ############# Initialization
 
 AC_INIT([madjack], [0.5], [njh@ecs.soton.ac.uk])
 
-AC_CONFIG_SRCDIR( src/madjack.c )
+AC_CONFIG_SRCDIR(src/madjack.c)
 AC_CANONICAL_SYSTEM
 
 dnl Version 1.7 of automake is recommended
-AM_INIT_AUTOMAKE( 1.7 )
-AM_CONFIG_HEADER( src/config.h )
+AM_INIT_AUTOMAKE(1.7)
+AM_CONFIG_HEADER(src/config.h)
 
 
 
