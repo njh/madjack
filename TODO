@@ -7,6 +7,8 @@ In order of priority:
  
  - resample audio that has different samplerate to jack
  
+ - change from libmad to libmpg123
+ 
  - adjust playback speed/rate
 
  - optimise QMadJACK class to send fewer OSC messages
