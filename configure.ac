@@ -5,7 +5,7 @@ AC_PREREQ(2.57)
 
 dnl ############# Initialization
 
-AC_INIT([madjack], [0.5], [njh@ecs.soton.ac.uk])
+AC_INIT([madjack], [0.5], [njh@aelius.com])
 
 AC_CONFIG_SRCDIR(src/madjack.c)
 AC_CANONICAL_SYSTEM

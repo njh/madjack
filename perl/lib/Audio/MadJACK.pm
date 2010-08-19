@@ -402,7 +402,7 @@ Returns the OSC URL of the MadJACK deck.
 
 L<Net::LibLO>
 
-L<http://www.ecs.soton.ac.uk/~njh/madjack/>
+L<http://www.aelius.com/njh/madjack/>
 
 =head1 AUTHOR
 
