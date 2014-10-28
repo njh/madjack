@@ -375,6 +375,10 @@ void read_keypress()
 {
 	// Get keypress
 	int c = fgetc( stdin );
+
+	// Ignore EOF (e.g. when stdin is /dev/null)
+	if (c == EOF) return;
+
 	switch(c) {
 	
 		// Pause/Play
