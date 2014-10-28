@@ -27,7 +27,7 @@ LCDTime::LCDTime(QWidget *parent)
     : QLCDNumber(parent)
 {
 	// MM:SS.H
-	this->setNumDigits( 7 );
+	this->setDigitCount( 7 );
 	this->setMode(QLCDNumber::Dec);
 
 }
