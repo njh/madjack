@@ -53,15 +53,15 @@ AC_CHECK_FUNCS( atexit usleep )
 
 
 
-dnl ############## If we even want to build the GUI, check for QT4
-AC_ARG_ENABLE([gui], AS_HELP_STRING([--disable-gui], [Don't compile QT4 GUI]))
-AC_ARG_VAR([QTDIR], [Location of QT4 installation])
-AC_MSG_CHECKING([whether to build QT4 GUI])
+dnl ############## If we even want to build the GUI, check for Qt
+AC_ARG_ENABLE([gui], AS_HELP_STRING([--disable-gui], [Don't compile Qt GUI]))
+AC_ARG_VAR([QTDIR], [Location of Qt installation])
+AC_MSG_CHECKING([whether to build Qt GUI])
 AS_IF([test "x$enable_gui" != "xno"], [
     AC_MSG_RESULT([yes])
     AC_PATH_PROG(ac_qmake, qmake, [no], $QTDIR/bin:${PATH})
     if test "x$ac_qmake" = "xno"; then
-        AC_MSG_WARN([qmake is missing, so not building gui])
+        AC_MSG_WARN([Qt's qmake is missing, so not building gui])
         QT_SUBDIRS=""
     else
         QT_SUBDIRS="gui"
