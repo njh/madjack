@@ -1,18 +1,14 @@
-
-dnl Require autoconf version >= 2.57
-AC_PREREQ(2.57)
+dnl Require autoconf version >= 2.59
+AC_PREREQ(2.59)
 
 
 dnl ############# Initialization
 
-AC_INIT([madjack], [0.5], [njh@aelius.com])
-
+AC_INIT([madjack], [1.0], [njh@aelius.com], [madjack])
 AC_CONFIG_SRCDIR(src/madjack.c)
-AC_CANONICAL_SYSTEM
-
-dnl Version 1.7 of automake is recommended
-AM_INIT_AUTOMAKE(1.7)
-AM_CONFIG_HEADER(src/config.h)
+AC_CONFIG_AUX_DIR([build-scripts])
+AC_CONFIG_MACRO_DIR([build-scripts])
+AM_INIT_AUTOMAKE
 
 
 
@@ -75,7 +71,14 @@ AC_SUBST(QT_SUBDIRS)
 
 
 
-dnl ############## Final Output
+dnl ############## Output files
 
-AC_OUTPUT([Makefile src/Makefile gui/Makefile])
+AC_CONFIG_HEADERS([src/config.h])
 
+AC_CONFIG_FILES([
+	Makefile
+	src/Makefile
+	gui/Makefile
+])
+
+AC_OUTPUT
