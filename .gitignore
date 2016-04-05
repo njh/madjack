@@ -25,7 +25,7 @@ Makefile.in
 stamp-h1
 
 src/madjack
-src/madjack-remote
+src/madjack-osc-remote
 src/config.h
 src/config.h.in
 

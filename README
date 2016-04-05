@@ -50,9 +50,9 @@ MadJACK accepts the following keys on
 Command Line Interface
 ----------------------
 
-madjack_remote <command>
+madjack-osc-remote <command>
 
- play, pause, stop, cue [<cuepoint>], eject, load <filename>, status, position, filepath, ping
+ play, pause, stop, cue [<cuepoint>], eject, load <filename>
 
 
 OSC Interface
