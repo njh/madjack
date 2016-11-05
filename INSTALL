@@ -12,7 +12,7 @@ Then as root:
  make install
 
 
-To build the GUI, you will need QT4 installed on your system.
+To build the GUI, you will need QT5 installed on your system.
 
 
 Generic Autoconf Installation Instructions

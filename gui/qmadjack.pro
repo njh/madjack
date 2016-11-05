@@ -5,3 +5,4 @@ DEPENDPATH += .
 INCLUDEPATH += .
 CONFIG += qt debug warn_on link_pkgconfig
 PKGCONFIG += liblo
+QT += widgets

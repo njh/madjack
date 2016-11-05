@@ -22,7 +22,7 @@
 */
 
 #include <QDebug>
-
+#include <unistd.h>
 #include "QMadJACK.h"
 
 
@@ -365,7 +365,7 @@ int QMadJACK::wait_reply( const QString &path )
 	
 		// Send Query
 		int result = this->send_message( path.toLatin1() );
-		if (result<1) { sleep(1); continue; }
+		if (result<1) { usleep(1000); continue; }
 		
 		// Wait for a reply with one second
 		bytes = lo_server_recv_noblock( this->serv, 1000 );
