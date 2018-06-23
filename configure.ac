@@ -41,6 +41,12 @@ PKG_CHECK_MODULES(MAD, mad, [], [
 AC_SUBST(MAD_CFLAGS)
 AC_SUBST(MAD_LIBS)
 
+# Check for libmosquitto
+AC_CHECK_LIB([mosquitto], [mosquitto_lib_init],, AC_ERROR([Misssing mosquitto client library]))
+AC_CHECK_FUNC([mosquitto_connack_string],, AC_ERROR([Misssing the mosquitto_connack_string function]))
+AC_CHECK_FUNC([mosquitto_log_callback_set],, AC_ERROR([Misssing the mosquitto_log_callback_set function]))
+AC_CHECK_HEADERS([mosquitto.h], [], [AC_ERROR([Missing mosquitto header file])])
+
 # Check for LibLO
 PKG_CHECK_MODULES(LIBLO, liblo >= 0.23)
 
